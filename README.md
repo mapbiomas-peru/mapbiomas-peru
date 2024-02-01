@@ -6,7 +6,7 @@
 
 ### LAND USE LAND COVER (LULC)
 * [COLECCION1](https://github.com/raisgmb/mapbiomas-public/tree/main/mapbiomas-peru)      <!-- https://github.com/mapbiomas-brazil/amazon  -->
-* [COLECCION2](https://github.com/mapbiomas-peru/aviso-mb-web)  
+* [COLECCION2](https://github.com/mapbiomas-peru/note-mb-pe-web/)  
 
 ### Cross Cuting themes
 * [Urban Infrastructure](https://raisgmb.github.io/aviso-mb-web/)
