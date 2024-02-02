@@ -9,25 +9,25 @@
 * [COLECCION2](https://mapbiomas-peru.github.io/note-mb-pe-web/)  
 
 ### Cross Cuting themes
-* [Urban Infrastructure](https://raisgmb.github.io/aviso-mb-web/)
-* [Glacier](https://raisgmb.github.io/aviso-mb-web/)
-* [Mining](https://raisgmb.github.io/aviso-mb-web/)
-* [Pasture](https://raisgmb.github.io/aviso-mb-web/)
-* [Agriculture](https://raisgmb.github.io/aviso-mb-web/)
-* [Flooded covers and Wetlands](https://raisgmb.github.io/aviso-mb-web/)
-* [Water](https://raisgmb.github.io/aviso-mb-web/)
+* [Urban Infrastructure](https://mapbiomas-peru.github.io/note-mb-pe-web/)
+* [Glacier](https://mapbiomas-peru.github.io/note-mb-pe-web/)
+* [Mining](https://mapbiomas-peru.github.io/note-mb-pe-web/)
+* [Pasture](https://mapbiomas-peru.github.io/note-mb-pe-web/)
+* [Agriculture](https://mapbiomas-peru.github.io/note-mb-pe-web/)
+* [Flooded covers and Wetlands](https://mapbiomas-peru.github.io/note-mb-pe-web/)
+* [Water](https://mapbiomas-peru.github.io/note-mb-pe-web/)
 
 ### Analysis
 
-* [Accuraccy](https://raisgmb.github.io/aviso-mb-web/)  <!---POR DEFINIR -->
+* [Accuraccy](https://mapbiomas-peru.github.io/note-mb-pe-web/)  <!---POR DEFINIR -->
 
 ### Mosaics
-* [Mosaic Creator](https://raisgmb.github.io/aviso-mb-web/)
-* [Mosaic Toolkit](https://raisgmb.github.io/aviso-mb-web/)
+* [Mosaic Creator](https://mapbiomas-peru.github.io/note-mb-pe-web/)
+* [Mosaic Toolkit](https://mapbiomas-peru.github.io/note-mb-pe-web/)
 
 ### Toolkits
 * [Mapbiomas user toolkit](https://github.com/mapbiomas-brazil/user-toolkit)
-* [Mapbiomas integration toolkit](https://raisgmb.github.io/aviso-mb-web/)
+* [Mapbiomas integration toolkit](https://mapbiomas-peru.github.io/note-mb-pe-web/)
 
 <!--
 **raisgmb/raisgmb** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
