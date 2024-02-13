@@ -5,8 +5,8 @@
 ## Summary of mapbiomas code repositories (Under construction)
 
 ### LAND USE LAND COVER (LULC)
-* [COLECCION1](https://github.com/raisgmb/mapbiomas-public/tree/main/mapbiomas-peru)      <!-- https://github.com/mapbiomas-brazil/amazon  -->
-* [COLECCION2](https://mapbiomas-peru.github.io/note-mb-pe-web/)  
+* [COLECCION1](https://github.com/mapbiomas-peru/lulc/tree/collection-1)      <!-- https://github.com/mapbiomas-brazil/amazon  -->
+* [COLECCION2](https://github.com/mapbiomas-peru/lulc/tree/collection-2)  
 
 ### Cross Cuting themes
 * [Urban Infrastructure](https://mapbiomas-peru.github.io/note-mb-pe-web/)
