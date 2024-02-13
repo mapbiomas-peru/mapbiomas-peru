@@ -9,8 +9,8 @@
 * [COLECCION2](https://github.com/mapbiomas-peru/lulc/tree/collection-2)  
 
 ### Cross Cuting themes
-* [Urban Infrastructure](https://mapbiomas-peru.github.io/note-mb-pe-web/)
-* [Glacier](https://mapbiomas-peru.github.io/note-mb-pe-web/)
+* [Urban Infrastructure](https://github.com/mapbiomas-peru/urban)
+* [Glacier](https://github.com/mapbiomas-peru/glacier)
 * [Mining](https://mapbiomas-peru.github.io/note-mb-pe-web/)
 * [Pasture](https://mapbiomas-peru.github.io/note-mb-pe-web/)
 * [Agriculture](https://mapbiomas-peru.github.io/note-mb-pe-web/)
@@ -22,8 +22,7 @@
 * [Accuraccy](https://mapbiomas-peru.github.io/note-mb-pe-web/)  <!---POR DEFINIR -->
 
 ### Mosaics
-* [Mosaic Creator](https://mapbiomas-peru.github.io/note-mb-pe-web/)
-* [Mosaic Toolkit](https://mapbiomas-peru.github.io/note-mb-pe-web/)
+* [Mosaic Creator](https://github.com/mapbiomas-peru/mosaics)
 
 ### Toolkits
 * [Mapbiomas user toolkit](https://github.com/mapbiomas-brazil/user-toolkit)
