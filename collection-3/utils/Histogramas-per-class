@@ -1,0 +1,161 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var imageVisParam = {"opacity":1,"bands":["slope"],"gamma":1.816},
+    imageVisParam2 = {"opacity":1,"bands":["b1"],"min":-2.1628124713897705,"max":6299.3525390625,"palette":["ded9ff","d0cff9","c3c6f3","b3bbec","a6b1e6","98a8e1","8b9fdb","7e95d4","6e89cb","617fc3","5575b8","4a6bac","4262a0","395790","334f83","2e4776","293f6a","24385d","1f304f","1b2943","172338","141d2e","111824","0f151b","0d1516","0d1712","0f1b12","112113","142716","162f19","1a361c","1d3e20","224825","26512a","2a5a2e","2e6233","336c38","39773e","3f8144","488b4a","529551","5fa059","70ab63","7fb46b","8ebd73","9dc57b","accd83","bdd68c","ccde94","dbe69b"]};
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+//Script para extraer una clase especifica por año y compararla con la colección 1 y 2
+
+// Variables definidas anteriormente
+var pais = 'PERU';
+var year = 2022; //clasificacion
+var region = 70401 
+var histogramClass = 3
+var percentiles = [10, 25, 50,75, 90];
+
+//Regiones de clasificacion
+var regionclass = 'projects/mapbiomas-raisg/MAPBIOMAS-PERU/DATOS-AUXILIARES/VECTORES/per-clasificacion-regiones-5';
+// Carga y visualiza la clasificación de regiones.
+var regionClassification = ee.FeatureCollection(regionclass);
+
+//Raster regiones classificacion
+var regionRaster = ee.Image('projects/mapbiomas-raisg/MAPBIOMAS-PERU/DATOS-AUXILIARES/RASTER/per-regiones-clasificacion-mbperu-3')
+
+var regionMask = regionRaster.eq(region) 
+
+//COLECCIÓN 2
+var inputAsset = 'projects/mapbiomas-raisg/MAPBIOMAS-PERU/COLECCION2/INTEGRACION/mapbiomas_peru_collection2_integration_v1';
+var palettes = require('users/mapbiomas/modules:Palettes.js');
+var mapbiomasPalette = palettes.get('classification8');
+
+var col2 = ee.Image(inputAsset);
+
+var singleImage = col2;
+
+// Seleccionar el año específico
+var bandName = 'classification_' + year;
+var imageOfYear = singleImage.select(bandName).updateMask(regionMask);
+
+// Visualización
+var visualizationParams = {
+  min: 0,
+  max: 62, 
+  palette: mapbiomasPalette,
+  bands: [bandName] 
+};
+
+Map.addLayer(imageOfYear, visualizationParams, 'col2-'+year, false);
+Map.addLayer(regionClassification, {}, 'Region Classification', false);
+
+
+  /** 
+   * Slope FABDEM for filtering 
+   * 
+   */
+var palettes = require('users/gena/packages:palettes');   
+var FABDEM = ee.ImageCollection("projects/sat-io/open-datasets/FABDEM");
+var proj_FABDEM = FABDEM.first().select(0).projection();//.aside(print);
+var slopeFABDEM = ee.Terrain.slope(FABDEM.mosaic()
+                             .setDefaultProjection(proj_FABDEM))
+                             .rename('slope')
+                             .updateMask(regionMask)
+                             
+var paletteFABDEM = palettes.crameri.lajolla[50] 
+Map.addLayer(slopeFABDEM, {palette: paletteFABDEM}, 'slopeFABDEM', false)
+
+print(slopeFABDEM, 'slopeFABDEM')
+
+  /** 
+   * Altitude FABDEM 
+   * 
+   */
+   
+   var AltitudeFABDEM = FABDEM.mosaic().setDefaultProjection(proj_FABDEM)
+   var paletteAltFABDEM = palettes.crameri.tofino[50].reverse() 
+   Map.addLayer(AltitudeFABDEM, {palette: paletteAltFABDEM}, 'altFABDEM', false)
+
+
+//histogram
+// Filtrar píxeles clasificados como 11
+var classe = imageOfYear.eq(histogramClass);
+
+// Extraer las pendientes para los píxeles clasificados como 11
+var slopeClass = slopeFABDEM.updateMask(classe);
+var altClass = AltitudeFABDEM.updateMask(classe)
+Map.addLayer(slopeClass, {palette: paletteFABDEM}, 'slopeFAABDEM region '+region, false)
+Map.addLayer(altClass, {palette: paletteAltFABDEM}, 'AltFAABDEM region '+region, false)
+
+
+
+  /** 
+   * Slope chart
+   * 
+   */
+   
+// Define the chart and print it to the console.
+var chart =
+    ui.Chart.image.histogram({
+      image: slopeClass, 
+      region: slopeClass.geometry(), 
+      scale: 125,
+      maxPixels: 1e13
+    })
+      .setOptions({
+        title: 'Slope Histogram Class ID-' + histogramClass,
+        hAxis: {
+          title: 'slope',
+          titleTextStyle: {italic: false, bold: true},
+        },
+        vAxis:
+            {title: 'Count', titleTextStyle: {italic: false, bold: true}},
+        colors: ['#9642bd']
+      });
+print(chart);
+
+// Calcula los percentiles
+var percentileImage = slopeClass.reduceRegion({
+  reducer: ee.Reducer.percentile(percentiles),
+  geometry: slopeClass.geometry(), // Define la geometría de la región de interés
+  scale: 125, // Define la escala en metros
+  maxPixels: 1e13 // Define el máximo número de píxeles a considerar
+});
+
+
+print('Slope percentiles:',percentileImage)
+
+
+
+  /** 
+   * Altitude chart
+   * 
+   */
+   
+var Altchart =
+    ui.Chart.image.histogram({
+      image: altClass, 
+      region: altClass.geometry(), 
+      scale: 125,
+      maxPixels: 1e13
+    })
+      .setOptions({
+        title: 'Altitude histogram Class ID-' + histogramClass,
+        hAxis: {
+          title: 'msnm',
+          titleTextStyle: {italic: false, bold: true},
+        },
+        vAxis:
+            {title: 'Count', titleTextStyle: {italic: false, bold: true}},
+        colors: ['#f5a60a']
+      });
+print(Altchart);
+
+
+// Calcula los percentiles
+var percentileImageAlt = altClass.reduceRegion({
+  reducer: ee.Reducer.percentile(percentiles),
+  geometry: altClass.geometry(), // Define la geometría de la región de interés
+  scale: 125, // Define la escala en metros
+  maxPixels: 1e13 // Define el máximo número de píxeles a considerar
+});
+  
+  
+print('Altitude percentiles:',percentileImageAlt)
+

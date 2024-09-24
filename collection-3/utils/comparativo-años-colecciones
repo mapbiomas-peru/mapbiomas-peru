@@ -1,0 +1,72 @@
+
+// AZUL solo en year1
+// ROJO solo en year2
+// GRIS ambas colecciones 2 
+
+// lista de años
+var year1 = 1985;
+var year2 = 2022;
+// Lista de clases para el analisis 
+var classes = [34, 21];
+
+var Palettes = require('users/mapbiomas/modules:Palettes.js');
+var palette = Palettes.get('classification8');
+var vis = {
+          'min': 0,
+          'max': 62,
+          'palette': palette,
+          'format': 'png'
+      };
+
+print(vis)
+
+var class_col = ee.Image('projects/mapbiomas-public/assets/peru/collection2/mapbiomas_peru_collection2_integration_v1')
+
+  var t0 = class_col.select('classification_'+year1);
+  var t1 = class_col.select('classification_'+year2);
+  classes.forEach(function(class_i) {
+    var images = ee.Image([]);
+
+    // selecionar a classificação do ano j
+    
+    // calcular concordância
+    var conc = ee.Image(0).where(t0.eq(class_i).and(t1.eq(class_i)), 1)   // [1]: Concordância
+                          .where(t0.eq(class_i).and(t1.neq(class_i)), 2)  // [2]: Apenas Sentinel
+                          .where(t0.neq(class_i).and(t1.eq(class_i)), 3)  // [3]: Apenas Landsat
+                          //.updateMask(biomes.eq(4));
+    
+    conc = conc.updateMask(conc.neq(0)).rename('territory');
+    
+    // build sinthetic image to compute areas
+    var synt = ee.Image(0).where(conc.eq(1), t0)
+                          .where(conc.eq(2), t1)
+                          .where(conc.eq(3), t0)
+                          .updateMask(conc)
+                          .rename(['classification']);
+    // build database
+    images = images.addBands(conc).addBands(synt);
+    
+      Map.addLayer(images.select(['territory']), {palette: [
+        'gray', 'blue', 'red'], min:1, max:3},  ' Agreement - Class ' + class_i, false);
+
+  });
+Map.addLayer(t0, vis, 'Col 2 '+year1, false)
+Map.addLayer(t1, vis, 'Col 2   '+year2, false)
+
+//years.forEach(function(year_j) {
+//// para cada classe 
+//  // para cada ano
+//
+//  
+//});
+
+
+
+var blank = ee.Image(0).mask(0);
+var dirs = require('users/mapbiomasperu/mapbiomas-lulc:collection-3/modules/CollectionDirectories.js');
+var paths = dirs.listpaths('PERU');
+
+var assetregionVectors= paths.regionVector
+var RegionVector = ee.FeatureCollection(assetregionVectors)
+
+Map.addLayer(RegionVector.style({fillColor: '#4d4e4f22',color:'black', width: 1}), {}, 'RegionVector', false)

@@ -1,0 +1,166 @@
+//Parametros
+var classes = [3, 4];
+var regionId = 70502;
+
+// Assets
+var col2Asset = 'projects/mapbiomas-raisg/MAPBIOMAS-PERU/COLECCION2/INTEGRACION/mapbiomas_peru_collection2_integration_v1';
+var classRaster = ee.Image('projects/mapbiomas-raisg/MAPBIOMAS-PERU/DATOS-AUXILIARES/RASTER/per-regiones-clasificacion-mbperu-3');
+var bosque_seco = ee.Image('projects/mapbiomas-raisg/MAPBIOMAS-PERU/DATOS-AUXILIARES/RASTER/minam-bosque-seco-perdida-2019-2021');
+// Value: (1) No Bosque Estacionalmente Seco; 
+//        (2) Bosque Estacionalmente Seco; 
+//        (3) Actividad Antropica; 
+//        (4) Vias;
+//        (5) Bosque Tropical del Pacifico; 
+//        (6) Perdida 2019-2021
+
+
+//Canopy Assets
+var MetaCanopyHeight = ee.ImageCollection('projects/meta-forest-monitoring-okw37/assets/CanopyHeight').mosaic()
+var EthCanopyheight = ee.Image('users/nlang/ETH_GlobalCanopyHeight_2020_10m_v1');
+var umdheight = ee.ImageCollection("users/potapovpeter/GEDI_V27").mosaic();
+
+//Layers
+
+regionMask = classRaster.eq(regionId)
+var region = classRaster.updateMask(regionMask)
+
+//Palettes
+var palettes = require('users/mapbiomas/modules:Palettes.js');
+var mapbiomasPalette = palettes.get('classification8');
+//visualización
+var vizParams = {
+    min: 0,
+    max: 25,
+    palette: require('users/gena/packages:palettes').matplotlib.viridis[7]
+};
+
+var regionMask = classRaster.eq(regionId)
+var col2 = ee.Image(col2Asset).updateMask(regionMask);
+
+
+function getStablePixels(image, classes) {
+  
+  var bandNames = image.bandNames(),
+      images = [];
+
+  classes.forEach(function(classId){
+      var previousBand = image
+        .select([bandNames.get(0)]).eq(classId);
+          
+      var singleClass = ee.Image(
+        bandNames.slice(1)
+          .iterate(
+            function( bandName, previousBand ) {
+              bandName = ee.String( bandName );
+              return image
+                .select(bandName).eq(classId)
+                .multiply(previousBand);
+            },
+            previousBand
+          )
+      );
+      
+      singleClass = singleClass
+        .updateMask(singleClass.eq(1))
+        .multiply(classId);
+      
+      images.push(singleClass);
+  });
+  
+  
+  // blend all images
+  var allStable = ee.Image();
+  
+  for(var i = 0; i < classes.length; i++) 
+    allStable = allStable.blend(images[i]);
+
+  return allStable;
+} 
+
+var stablePixels = getStablePixels(col2, classes);
+
+print(stablePixels)
+
+
+//Image Collection from Canopy Height Assets
+
+var CanopyCollection = MetaCanopyHeight
+                      .addBands(EthCanopyheight)
+                      .addBands(umdheight)
+                      .rename(['MetaCanopyHeight','EthCanopyheight', 'umdheight'])
+                      .updateMask(regionMask)
+print('CanopyCollection:',CanopyCollection)
+
+
+// Histogramas para cada clase
+classes.forEach(function(classId) {
+  
+  var classMask = stablePixels.eq(classId);
+  var maskedCanopyHeight = CanopyCollection.updateMask(classMask);
+  
+  var histogram = ui.Chart.image.histogram({
+    image: maskedCanopyHeight,
+    region: regionMask.geometry(), 
+    scale: 30, 
+    maxPixels: 1e13
+  })
+  .setOptions({
+    title: 'Canopy Height Class ' + classId + ' - Region ' + regionId,
+    legend: {position: 'Right'},
+    vAxis: {
+      title: 'Frecuencia', 
+      textStyle: {italic: false, bold: false, fontSize: 9},  // tick label text style
+      titleTextStyle: {italic: false, bold: true, fontSize: 7},
+      format: 'short'
+    },
+    hAxis: {title: 'Altura del dosel (m)',
+    viewWindow: {min: 0, max: 20}, 
+    scaleType: 'linear',
+    textStyle: {italic: false, bold: false, fontSize: 9},  // tick label text style
+    titleTextStyle: {italic: false, bold: true, fontSize: 7},
+    ticks: [1, 5, 10, 15, 20, 25,30]// axis title text style
+    },
+    colors: ['f0af07', '0f8755', '76b349']  
+  });
+
+  // Imprimir el histograma en la consola
+  print(histogram);
+});
+
+//Add Layers
+// Canopy layers
+var vizParams = {
+    min: 0,
+    max: 25,
+    palette: require('users/gena/packages:palettes').matplotlib.viridis[7]
+};
+
+var bandNames = ['MetaCanopyHeight', 'EthCanopyheight', 'umdheight'];
+
+
+bandNames.forEach(function(bandName) {
+    Map.addLayer(CanopyCollection.select(bandName), vizParams, 'Altura del Dosel ' + bandName,false);
+});
+
+Map.addLayer(bosque_seco.eq(2).selfMask(), {palette: '41ff3f'}, 'Bosque seco 2021 Geobosques')
+Map.addLayer(bosque_seco.eq(5).selfMask(), {palette: '144e13'}, 'Bosque tropical 2021 Geobosques')
+
+//Stable Pixels
+
+// Region
+
+Map.addLayer(region, {opacity: 0.8, color: 'white'}, 'region'+regionId)
+
+
+// Pixeles estables
+    Map.addLayer(
+      stablePixels,
+      {
+        min: 0,
+        max: 62,
+        palette: mapbiomasPalette
+      },
+      'PIXELES ESTABLES',false
+    );
+    
+

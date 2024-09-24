@@ -1,0 +1,63 @@
+// List folders
+var assetInput = [
+    // "projects/mapbiomas-raisg/MUESTRAS/PERU/COLECCION5/TRANSVERSALES/AGRICULTURA/STEP_02",
+    // "projects/mapbiomas-raisg/MUESTRAS/PERU/COLECCION5/TRANSVERSALES/AGRICULTURA",
+    // "projects/mapbiomas-raisg/MUESTRAS/PERU/COLECCION5/PUNTOS_ESTABLES",
+    // "projects/mapbiomas-raisg/MUESTRAS/PERU/COLECCION5/AREAS_CLASE_REGION"
+    
+    "projects/mapbiomas-raisg/PRODUCTOS/AGUA/PERU/BETA/PILOT_VECS_4min",
+    "projects/mapbiomas-raisg/PRODUCTOS/AGUA/PERU/BETA",
+    "projects/mapbiomas-raisg/PRODUCTOS/AGUA/PERU/COLECCION1/POSTPROCESSING",
+    "projects/mapbiomas-raisg/PRODUCTOS/AGUA/PERU/COLECCION1/POSTPROCESSING/01-VECT-01",
+    "projects/mapbiomas-raisg/PRODUCTOS/AGUA/PERU/COLECCION1/POSTPROCESSING/01-VECT-01-test"
+];
+
+var folder = 'projects/mapbiomas-raisg/MUESTRAS/PERU/COLECCION5/TRANSVERSALES/AGRICULTURA/STEP_02';
+
+assetInput.forEach( function (folderid) {
+  
+  var list = ee.List([]);
+  
+  function list_folder_to_featColl(e) {
+    var path = e.id;
+    var type = e.type
+    
+    var fc = ee.Algorithms.If(ee.Algorithms.IsEqual(type, 'TABLE'), 
+            ee.FeatureCollection(path), 
+              ee.FeatureCollection([]))
+    return fc; 
+  }
+  
+  // Function to recursively concatenate asset lists from multiple pages
+  function listAssetsRecursive(folder, pageToken) {
+    var options = {};
+    if (pageToken !== undefined) {
+      options.pageToken = pageToken;
+    }
+  
+    var result = ee.data.listAssets(folder, options);
+    var assets = result['assets'];
+    list = list.cat(assets.map(list_folder_to_featColl));
+  
+    if (result.nextPageToken !== null) {
+      // Call the function recursively for the next page
+      listAssetsRecursive(folder, result.nextPageToken);
+    }
+  }
+  
+  // Start listing assets
+  listAssetsRecursive(folderid);
+  
+  // Print the final concatenated asset list
+  print(folderid)
+  print('Final Asset List:', list);
+  
+  var featcoll = ee.FeatureCollection(list);
+  
+  var asset_size = featcoll
+                  .aggregate_sum('system:asset_size')
+                  .divide(ee.Number(1024).pow(3));
+                   
+  print('Total Numero Asset',featcoll.size(),
+    'GBytes',asset_size)
+ })

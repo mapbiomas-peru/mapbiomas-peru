@@ -1,0 +1,345 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var plantacion = ee.Image("projects/mapbiomas-raisg/MAPBIOMAS-PERU/DATOS-AUXILIARES/RASTER/ACUMULADO/acumulado-ID9"),
+    geometry = /* color: #d63000 */ee.Geometry.MultiPoint(
+        [[-78.49658850407468, -8.018415733068139],
+         [-72.97421518017333, -14.22519275188781],
+         [-72.97829213787597, -14.219243952546869],
+         [-78.58041685238156, -6.945263624658927],
+         [-78.61423414364133, -6.97559415624959],
+         [-78.62185898049918, -7.0969962938891005]]),
+    add = /* color: #98ff00 */ee.Geometry({
+      "type": "GeometryCollection",
+      "geometries": [
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                -78.49714640354978,
+                -8.018160758349257
+              ],
+              [
+                -78.4985196945654,
+                -8.01947812600955
+              ],
+              [
+                -78.49830511784421,
+                -8.020370533935562
+              ],
+              [
+                -78.49564436650144,
+                -8.02015805603557
+              ],
+              [
+                -78.4941423294531,
+                -8.019180656265691
+              ],
+              [
+                -78.49427107548581,
+                -8.017140857875468
+              ],
+              [
+                -78.49581602787839,
+                -8.017183353779602
+              ]
+            ]
+          ],
+          "evenOdd": true
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                -78.4745781817896,
+                -8.042869134516335
+              ],
+              [
+                -78.47497783093281,
+                -8.04316658690784
+              ],
+              [
+                -78.47487590699025,
+                -8.043347182896218
+              ],
+              [
+                -78.47440652041264,
+                -8.043450759970908
+              ],
+              [
+                -78.47411684183903,
+                -8.043086912181503
+              ]
+            ]
+          ],
+          "evenOdd": true
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                -72.9748589103369,
+                -14.222405571686917
+              ],
+              [
+                -72.9748589103369,
+                -14.223695166798185
+              ],
+              [
+                -72.97528806377929,
+                -14.223695166798185
+              ],
+              [
+                -72.97515931774657,
+                -14.226107937890978
+              ],
+              [
+                -72.97352853466552,
+                -14.227231115647841
+              ],
+              [
+                -72.97224107433837,
+                -14.226399132660266
+              ],
+              [
+                -72.97232690502685,
+                -14.224111163651727
+              ],
+              [
+                -72.97434392620605,
+                -14.2215319708188
+              ]
+            ]
+          ],
+          "evenOdd": true
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                -72.97862932942226,
+                -14.215874280467485
+              ],
+              [
+                -72.97931597493007,
+                -14.218370336448627
+              ],
+              [
+                -72.97802851460293,
+                -14.22107436600302
+              ],
+              [
+                -72.97523901722744,
+                -14.220907965118116
+              ],
+              [
+                -72.97420904896572,
+                -14.21728871557265
+              ],
+              [
+                -72.97686980030849,
+                -14.215042255685193
+              ]
+            ]
+          ],
+          "evenOdd": true
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                -78.58812642076317,
+                -6.956747798503646
+              ],
+              [
+                -78.58640980699364,
+                -6.961348510703751
+              ],
+              [
+                -78.58125996568505,
+                -6.968505084459418
+              ],
+              [
+                -78.57611012437646,
+                -6.972083330372984
+              ],
+              [
+                -78.57508015611474,
+                -6.9756615489586915
+              ],
+              [
+                -78.57027363756005,
+                -6.976172720810726
+              ],
+              [
+                -78.55448079088036,
+                -6.970379407154862
+              ],
+              [
+                -78.55018925645653,
+                -6.963734047421784
+              ],
+              [
+                -78.54486775377099,
+                -6.952147041226328
+              ],
+              [
+                -78.54572606065575,
+                -6.946694233529231
+              ],
+              [
+                -78.54967427232567,
+                -6.938685307605163
+              ],
+              [
+                -78.55448079088036,
+                -6.9303354312608905
+              ],
+              [
+                -78.56014561631982,
+                -6.931017059366341
+              ],
+              [
+                -78.56375050523583,
+                -6.936810858452962
+              ],
+              [
+                -78.56924366929833,
+                -6.933402749971912
+              ],
+              [
+                -78.5726768968374,
+                -6.927949725130319
+              ],
+              [
+                -78.58057332017724,
+                -6.928631356685183
+              ],
+              [
+                -78.58555150010888,
+                -6.935277212687981
+              ],
+              [
+                -78.58778309800927,
+                -6.938855711703513
+              ],
+              [
+                -78.58486485460107,
+                -6.944819816277805
+              ],
+              [
+                -78.58537983873192,
+                -6.950102245752615
+              ]
+            ]
+          ],
+          "geodesic": true,
+          "evenOdd": true
+        }
+      ],
+      "coordinates": []
+    });
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+//----------------1. Bioma Andes ------------------------
+
+var id_regions = [704, 703]; 
+
+var assetregionMosaic = 'projects/mapbiomas-raisg/DATOS_AUXILIARES/VECTORES/clasificacion-mosaicos-4';
+
+var mosaicVectors = ee.FeatureCollection(assetregionMosaic);
+
+id_regions.forEach(function(id_region) {
+  
+  var selectedMosaic = mosaicVectors.filter(ee.Filter.eq('id_region', id_region));
+  
+  Map.addLayer(selectedMosaic, {}, 'region - ' +id_region, true);
+  
+})
+
+//2. Mosaico 2023 -----------------------------
+
+var year = 2023;
+
+var mosaicPE = ee.ImageCollection("projects/nexgenmap/MapBiomas2/LANDSAT/PANAMAZON/mosaics-2")
+                     .merge(ee.ImageCollection("projects/mapbiomas-raisg/MOSAICOS/mosaics-2"))
+                    .filterMetadata('year', 'equals', year)
+                    .filter(ee.Filter.eq('country', 'PERU'))
+                    .select(["blue_median","green_median", "red_median", "nir_median", "swir1_median", "swir2_median"])
+                    
+var regionesMOS = ee.Image("projects/mapbiomas-raisg/MAPBIOMAS-PERU/DATOS-AUXILIARES/RASTER/mb-peru-regiones-mosaico-2");
+
+mosaicPE = mosaicPE
+                        .map(
+                            function (image) {
+                                return image.updateMask(
+                                    regionesMOS.eq(ee.Number.parse(image.get('region_code')).toInt16()));
+                            }
+                        );
+
+
+var mosaic  = mosaicPE.mosaic()
+
+Map.addLayer(mosaic, 
+    {
+        bands: 'swir1_median,nir_median,red_median',
+        gain: '0.08,0.06,0.2',
+        gamma: 0.75
+    },
+    
+    'mapbiomas mosaic PE',
+    
+    false
+);
+
+//3. NDVI---------------------
+
+var ndvi = mosaic.normalizedDifference(['nir_median', 'red_median']).rename('NDVI');
+
+var palettes = require('users/gena/packages:palettes');
+
+var ndvipalette = palettes.colorbrewer.RdYlGn[11]; 
+
+var ndviParams = {min: -1, max: 1, palette: ndvipalette};
+
+Map.addLayer(ndvi, ndviParams, 'NDVI', false);
+
+
+//4. Pendiente ---------------------------
+
+var dem = ee.Image('USGS/SRTMGL1_003');
+
+var slope = ee.Terrain.slope(dem);
+
+var palette = palettes.colorbrewer.RdYlGn[11].reverse()
+
+var slopeVis = {
+  min: 0,
+  max: 45,
+  palette: palette // Verde, Amarillo, Rojo
+};
+
+
+Map.addLayer(slope,slopeVis ,'Pendiente', false);
+
+//5. Canopy Height---------------------------
+
+var canopy_height = ee.Image("users/nlang/ETH_GlobalCanopyHeight_2020_10m_v1");
+print(canopy_height)
+
+Map.addLayer(canopy_height, {
+  min:0,
+  max: 50, 
+  palette: ["#010005","#150b37","#3b0964","#61136e",
+  "#85216b","#a92e5e","#cc4248","#e75e2e","#f78410",
+  "#fcae12","#f5db4c","#fcffa4"]}, 
+  'Canopy Height', 
+  false)
+
+//6. Raster acumulado de la clase PLANTACION FORESTAL (id = 09)
+Map.addLayer(plantacion, {palette: ["fff207"]}, 'Acumulado nacional Clase 09', false)
+
+
+

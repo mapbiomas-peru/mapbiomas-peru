@@ -1,0 +1,229 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var INCLUSION = 
+    /* color: #0e27ff */
+    /* shown: false */
+    ee.Geometry.Polygon(
+        [[[-79.89916079075846, -3.95038518790617],
+          [-79.73436586888346, -4.09285573902257],
+          [-79.43773500950846, -3.522830233396409],
+          [-80.05296938450846, -4.136687773340651]]]),
+    geometry = 
+    /* color: #d63000 */
+    /* shown: false */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      },
+      {
+        "type": "rectangle"
+      },
+      {
+        "type": "rectangle"
+      },
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Geometry.MultiPolygon(
+        [[[[-79.7233013588317, 0.12911850625933669],
+           [-79.7233013588317, -7.779000828253603],
+           [-69.5939068275817, -7.779000828253603],
+           [-69.5939068275817, 0.12911850625933669]]],
+         [[[-79.65624610453739, -7.756739452605916],
+           [-79.65624610453739, -10.64119799899753],
+           [-70.43871680766239, -10.64119799899753],
+           [-70.43871680766239, -7.756739452605916]]],
+         [[[-66.34081641703739, -10.014318140513929],
+           [-66.34081641703739, -10.014318140513929],
+           [-66.34081641703739, -10.014318140513929],
+           [-66.34081641703739, -10.014318140513929]]],
+         [[[-75.93790472566062, -10.634511471498035],
+           [-75.93790472566062, -14.674822357863327],
+           [-68.54410589753563, -14.674822357863327],
+           [-68.54410589753563, -10.634511471498035]]]], null, false);
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+// set country name
+var countryName = 'Perú'; 
+
+// set year for the mosaic and classification
+var year = 2023
+
+// list of assets
+var assetDef = 'users/sad/project/raisg/deforestation-col4-2/deforestation-peru-col4-1-ft';
+var assetMos = 'projects/mapbiomas-raisg/MOSAICOS/mosaics-2';
+var assetCla = 'projects/mapbiomas-raisg/public/collection4/mapbiomas_raisg_panamazonia_collection4_integration_v1';
+var assetCountry = 'users/sad/project/raisg/database/country';
+var palette = require('users/mapbiomas/modules:Palettes.js');
+
+// Mosaic
+var assetRegionMosaicRaster = 'projects/mapbiomas-raisg/DATOS_AUXILIARES/RASTERS/clasificacion-mosaicos-4';
+
+var regionMosaicRaster  = ee.Image(assetRegionMosaicRaster).rename(['regions'])
+
+var getMosaic = function(paths, regionRaster) {
+  
+      // Get
+      regionRaster = regionRaster.where(regionRaster.eq(211),210)
+      regionRaster = regionRaster.where(regionRaster.eq(205),210)
+      var Mosaic_coll = ee.ImageCollection(paths)
+                        .filterMetadata('country', 'equals', countryName.replace('ú','u').toUpperCase())
+                        .select(["swir1_median","nir_median","red_median"])
+                        .map(
+                            function (image) {
+                                return image.updateMask(
+                                    regionRaster.eq(ee.Number.parse(image.get('region_code')).toInt16()));
+                            }
+                        );
+
+      // Aditional Bands
+      var joinedMosaics = Mosaic_coll;
+
+      // Select variables
+      return joinedMosaics;
+  };
+
+// country
+var country = ee.FeatureCollection(assetCountry)
+    .filter(ee.Filter.eq('pais', countryName));
+
+// mosaic
+var mosaicsRAISG = getMosaic(assetMos, regionMosaicRaster);
+var mosaicYear = mosaicsRAISG
+    .filter(ee.Filter.eq('year', year))
+    .mosaic()
+    .clip(country)
+    .selfMask();
+
+Map.addLayer(mosaicYear, {"bands": ["swir1_median","nir_median","red_median"],
+                       "gain": '0.08,0.06,0.2',
+                       "gamma": 0.75},
+                       'mosaic ' + year, true);
+
+// forest loss and non forest PNCB-MINAM
+
+var def_minam = ee.Image("projects/mapbiomas-raisg/MAPBIOMAS-PERU/DATOS-AUXILIARES/RASTER/PNCB_Bosque_No_Bosque_2022");
+def_minam = def_minam.select("b1").rename("clases");
+
+
+// Forest Loss PNCB Reclass
+///// Original Legend: (1) No monitoreado; (2) No bosque; (3) Pérdida 2001-2022; (4) Hidrografia; (5) Bosque 2022
+
+var def_minam_remap = ee.Image(1)
+                          .where(def_minam.eq(2).and(def_minam.eq(3)),1)
+                          .where(def_minam.eq(5),2)
+                          .where(def_minam.eq(1),0)
+                          .where(def_minam.eq(4),3);
+
+// Apply spatial filter
+
+var num_pixeles = 9;
+var imageFilledConnected = def_minam.addBands(
+    def_minam
+        .connectedPixelCount(100, true)
+        .rename(def_minam.bandNames().map(
+            function (band) {
+                return ee.String(band).cat('_connected')
+            }
+        ))
+);
+
+var moda = imageFilledConnected.select("clases").focal_mode(1, 'square', 'pixels')
+moda = moda.mask(imageFilledConnected.select("clases_connected").lte(num_pixeles))
+var class_out = imageFilledConnected.select("clases").blend(moda)
+
+// Loss PNCB filtered Reclassification
+
+var class_out_remap = ee.Image(1)
+                          .where(class_out.eq(2).and(class_out.eq(3)),1)
+                          .where(class_out.eq(5),2)
+                          .where(class_out.eq(1),0)
+                          .where(class_out.eq(4),3);
+
+// Visualization
+var palette = ['a10909','45C500','eb56fd','000000']
+
+var piramide_Active = true;   //Si está en true, se usará la reproyección (Mejor visualización del efecto del filtro)
+
+if(piramide_Active) {
+  //Map.addLayer(def_minam_remap.reproject('EPSG:4326', null, 30), {palette:palette, min:1, max:4}, 'Original PNCB',false);
+  Map.addLayer(class_out_remap.eq(2).selfMask().reproject('EPSG:4326', null, 30),{palette:['2a7829']},'forest 2022 PNCB filtered',false);
+  Map.addLayer(class_out_remap.eq(1).selfMask().reproject('EPSG:4326', null, 30),{palette:['a10909']},'non forest + forest loss 2001-2022 PNCB filtered');
+
+
+} else {
+  Map.addLayer(class_out_remap.eq(2).selfMask(),{palette:['2a7829']},'forest 2022 PNCB filtered',false);
+  Map.addLayer(class_out_remap.eq(1).selfMask(),{palette:['a10909']},'non forest + forest loss 2001-2022 PNCB filtered');
+}
+
+var loss2023 = ee.Image('projects/mapbiomas-raisg/MAPBIOMAS-PERU/DATOS-AUXILIARES/RASTER/PNCB_ATD_2023_R')
+              .neq(0).selfMask().rename("loss2023");
+Map.addLayer(loss2023,{palette:['eb56fd']},'ATD 2023 PNCB',false);
+
+
+
+// Leyenda
+
+var legend = ui.Panel({
+  style: {
+    position: 'bottom-left',
+    padding: '8px 15px'
+  }
+});
+ 
+var legendTitle = ui.Label({
+  value: 'Leyenda',
+  style: {
+    fontWeight: 'bold',
+    fontSize: '16px',
+    margin: '0 0 4px 0',
+    padding: '0'
+    }
+});
+ 
+legend.add(legendTitle);
+
+var makeRow = function(color, name) {
+       var colorBox = ui.Label({ 
+        style: {
+          backgroundColor: '#' + color,
+          padding: '8px',
+          margin: '0 0 4px 0'
+        }
+      });
+ 
+var description = ui.Label({
+        value: name,
+        style: {margin: '0 0 4px 6px'}
+      });
+      return ui.Panel({
+        widgets: [colorBox, description],
+        layout: ui.Panel.Layout.Flow('horizontal')
+      });
+};
+
+var Elemento =[
+  [palette[0],'1 - No bosque + Pérdida 2001-2022'],
+  [palette[1],'2 - Bosque 2022'],
+  [palette[2],'3 - Alertas de Deforestación 2023'],
+  // [palette[3],'4 - No Monitoreado']
+  ]
+
+Elemento.forEach(function(ele){
+  legend.add(makeRow(ele[0], ele[1]))
+})
+
+Map.add(legend);
+
+
+// set dark style
+var mapp = require('users/joaovsiqueira1/packages:Mapp.js');
+
+Map.setOptions({
+    'styles': {
+        'Dark': mapp.getStyle('Dark')
+    }
+});
+
+//Map.centerObject(country);
+
+

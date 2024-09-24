@@ -1,0 +1,16 @@
+var collection = ee.ImageCollection("projects/mapbiomas-raisg/PRODUCTOS/AGUA/PERU/COLECCION1/POSTPROCESSING/04-remap-04")
+//print(collection)
+ 
+function water_reduce(image) { 
+  var water = image.gte(1).and(image.lte(3)).selfMask()
+  var water_freq = water.reduce(ee.Reducer.sum()).gte(6).selfMask()
+
+  return water_freq;
+}
+
+var water2 = collection.map(water_reduce)
+//print(water2)
+Map.addLayer(water2,{},'Serie anual',false)
+
+var Water_sum = water2.reduce('sum')
+Map.addLayer(Water_sum,{"min":1,"max":39,"palette":["ff0000","ff9206","f9ff04"]},'Acumulado agua')

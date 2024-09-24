@@ -1,0 +1,18 @@
+// Lista de rutas
+var listaDeRutas = [
+  "projects/mapbiomas-raisg/DATOS_AUXILIARES/RASTERS/PERU/fog_oasis_verdant2021",
+  "projects/mapbiomas-raisg/DATOS_AUXILIARES/RASTERS/PERU/per-11-2021",
+  "projects/mapbiomas-raisg/DATOS_AUXILIARES/RASTERS/PERU/per-15-2021-agropecuaria",
+  "projects/mapbiomas-raisg/DATOS_AUXILIARES/RASTERS/PERU/per-18-2021-agropecuaria",
+  "projects/mapbiomas-raisg/DATOS_AUXILIARES/RASTERS/PERU/per-clasificacion-regiones-5",
+  "projects/mapbiomas-raisg/DATOS_AUXILIARES/RASTERS/PERU/per-limite-Peru-1",
+  ];
+
+// Bucle
+for (var i = 0; i < listaDeRutas.length; i++) {
+  var ruta = listaDeRutas[i];
+
+//Funcion para eliminar la ruta
+  ee.data.deleteAsset(ruta);
+}
+

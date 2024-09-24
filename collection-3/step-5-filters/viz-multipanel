@@ -1,0 +1,165 @@
+// COL 3
+
+var regionId = 70101;
+var collection = 'clasificacion-ft';
+var inputVersion = 12
+var claseGraph = 3
+
+var inputAsset = 'projects/mapbiomas-raisg/MAPBIOMAS-PERU/COLECCION3/' + collection + '/PERU-'+ regionId + '-'+inputVersion;
+var collection = ee.Image(inputAsset);
+ 
+var palettes = require('users/mapbiomas/modules:Palettes.js').get('classification8');
+
+var years = [ 1985, 1986, 1987, 1988, 1989,1990, 
+              1991, 1992, 1993, 1994, 1995, 1996, 
+              1997, 1998, 1999, 2000, 2001, 2002, 
+              2003, 2004, 2005, 2006, 2007, 2008, 
+              2009, 2010, 2011, 2012, 2013, 2014, 
+              2015, 2016, 2017, 2018, 2019, 2020, 
+              2021, 2022, 2023, 2024
+              ];
+
+var maps = [],
+    map, 
+    mosaic; 
+
+for (var i = 0; i < years.length; i++) {
+
+    mosaic = collection.select('classification_'+ String(years[i]));
+
+    map = ui.Map();
+
+    map.add(ui.Label(String(years[i]), {
+        'position': 'bottom-left',
+        'fontWeight': 'bold'
+    }));
+
+    map.addLayer(mosaic, {
+    "bands": 'classification_'+ String(years[i]), //classification
+    "min": 0,
+    "max": 62,
+    "palette": palettes
+}, years[i]+'a');
+
+
+
+    maps.push(map);
+}
+
+// blank map
+maps.push(ui.Map());
+
+var linker = ui.Map.Linker(maps);
+
+// Create a title.
+var title = ui.Label('Clasification of Collection 3 - Mapbiomas Perú -' + regionId , {
+    stretch: 'horizontal',
+    textAlign: 'center',
+    fontWeight: 'bold',
+    fontSize: '24px',
+
+});
+
+// Create a grid of maps.
+var mapGrid = ui.Panel([
+    ui.Panel([maps[0], maps[1], maps[2], maps[3], maps[4], maps[5], maps[6]],
+            ui.Panel.Layout.Flow('horizontal'), {
+                stretch: 'both'
+            }),
+    ui.Panel([maps[7], maps[8], maps[9], maps[10], maps[11], maps[12], maps[13]],
+            ui.Panel.Layout.Flow('horizontal'), {
+                stretch: 'both'
+            }),
+    ui.Panel([maps[14], maps[15], maps[16], maps[17], maps[18], maps[19], maps[20]],
+            ui.Panel.Layout.Flow('horizontal'), {
+                stretch: 'both'
+            }),
+    ui.Panel([maps[21], maps[22], maps[23], maps[24], maps[25], maps[26], maps[27]],
+            ui.Panel.Layout.Flow('horizontal'), {
+                stretch: 'both'
+            }),
+    ui.Panel([maps[28], maps[29], maps[30], maps[31], maps[32], maps[33], maps[34]],
+            ui.Panel.Layout.Flow('horizontal'), {
+                stretch: 'both'
+            }),
+    ui.Panel([maps[35], maps[36], maps[37], maps[38], maps[39]],
+            ui.Panel.Layout.Flow('horizontal'), {
+                stretch: 'both'
+            }),
+  ],
+    ui.Panel.Layout.Flow('vertical'), {
+        stretch: 'both'
+    }
+);
+
+// Add the maps and title to the ui.root.
+ui.root.widgets().reset([title, mapGrid]);
+ui.root.setLayout(ui.Panel.Layout.Flow('vertical'));
+
+maps[0].centerObject(collection,8);
+
+
+
+
+
+// Función para enmascarar valores distintos al especificado
+function enmascararValor(banda) {
+  return collection.select([banda]).eq(claseGraph)
+               .multiply(ee.Image.pixelArea()).divide(10000); // Convierte el área de m² a hectáreas
+}
+
+var year = ee.List.sequence(1985, 2023); // Ajusta los años según tus bandas
+var areasPorAño = year.map(function(año) {
+  var nombreBanda = ee.String('classification_').cat(ee.Number(año).int().format());
+  var area = enmascararValor(nombreBanda).reduceRegion({
+    reducer: ee.Reducer.sum(),
+    geometry: collection.geometry(),
+    scale: 250, // Ajusta según la resolución de tu imagen
+    maxPixels: 1e9
+  });
+  return ee.Number(area.get(nombreBanda)).round(); // Redondea el resultado a hectáreas
+});
+
+print('areas por año:', areasPorAño)
+
+
+var chart = ui.Chart.array.values({
+  array: ee.Array(areasPorAño),
+  axis: 0,
+  xLabels: year
+}).setOptions({
+  title: 'Tendencia Anual - Clase ' + claseGraph,
+  titlePosition: 'center',
+  legend: {position: 'none'},
+  hAxis: {
+    title: 'Año', 
+    viewWindow: {min: 1985, max: 2023}, 
+    scaleType: 'linear',
+    textStyle: {italic: false, bold: false},  // tick label text style
+    titleTextStyle: {italic: false, bold: true, fontSize: 9},
+    ticks: [1985, 1990, 2000, 2010, 2020, 2022, 2024]// axis title text style
+  },
+  vAxis: {
+    title: 'Área (ha)', 
+    textStyle: {italic: false, bold: false},  // tick label text style
+    titleTextStyle: {italic: false, bold: true},
+    format: 'short'
+    },
+  colors: [palettes[claseGraph]],
+  lineWidth: 2,
+  pointSize: 1,
+  chartArea: {backgroundColor: '#5e5d5a'},
+  trendlines: {
+    0: {  // add a trend line to the 1st series
+      type: 'linear',  // or 'polynomial', 'exponential'
+      color: '#ffffff',
+      lineWidth: 5,
+      opacity: 0.6,
+      visibleInLegend: true,
+    }
+  }
+});
+
+print('Grafico de areas por clase - escala 250m :', chart);
+
+

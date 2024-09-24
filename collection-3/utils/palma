@@ -1,0 +1,344 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var from_27_to_30_2020_2022 = /* color: #f7ff25 */ee.FeatureCollection(
+        [ee.Feature(
+            ee.Geometry.Point([-70.47226262377397, -13.004225607960528]),
+            {
+              "original": "27,",
+              "new": "30,",
+              "t0": 2020,
+              "t1": 2022,
+              "system:index": "0"
+            })]),
+    from_30_to_27_2020_2022 = /* color: #ff17f3 */ee.FeatureCollection(
+        [ee.Feature(
+            ee.Geometry.Point([-70.42110753344194, -12.997535163420212]),
+            {
+              "original": "30,",
+              "new": "27,",
+              "t0": 2020,
+              "t1": 2022,
+              "system:index": "0"
+            })]),
+    Area_grafic = 
+    /* color: #d63000 */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.FeatureCollection(
+        [ee.Feature(
+            ee.Geometry.Polygon(
+                [[[-70.80630360779078, -12.891729905529875],
+                  [-70.80630360779078, -13.14862274656522],
+                  [-70.28719960388453, -13.14862274656522],
+                  [-70.28719960388453, -12.891729905529875]]], null, false),
+            {
+              "system:index": "0"
+            })]);
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+
+/** 
+ * Paso 1  
+   PALMA
+**/
+
+var param = {
+  country: 'PERU',
+  regionName : 'AMAZONIA',  // AMAZONIA
+  years_view: [1985], //visualizacion
+  outputVersion: 1, // version de clasificacion salida
+  remapGeometry: [],  //from_27_to_30_2020_2022, from_30_to_27_2020_2022
+};
+
+var palettes = require('users/mapbiomas/modules:Palettes.js');
+var regionMosVector =  'projects/mapbiomas-raisg/DATOS_AUXILIARES/VECTORES/PERU/per-clasificacion-mosaicos-5';
+var regionMosRaster ='projects/mapbiomas-raisg/DATOS_AUXILIARES/RASTERS/per-clasificacion-mosaicos-5';
+var mosaics = [
+            'projects/nexgenmap/MapBiomas2/LANDSAT/PANAMAZON/mosaics-2',
+            'projects/mapbiomas-raisg/MOSAICOS/mosaics-2'
+           ];
+var palette = [
+    '#ffffff', // [00]      0. Ausência de dados
+    '#129912', // [01]      1. Floresta
+    '#1f4423', // [02]    1.1. Floresta Natural
+    '#006400', // [03]  1.1.1. Formação Florestal
+    '#32CD32', // [04]  1.1.2. Formação Savânica
+    '#687537', // [05]  1.1.3. Mangue
+    '#76a5af', // [06]-
+    '#29eee4', // [07]-
+    '#77a605', // [08]-
+    '#935132', // [09]    1.2. Floresta Plantada
+    '#bbfcac', // [10]      2. Formação Natural não Florestal
+    '#45c2a5', // [11]    2.1. Área Úmida Natural não Florestal
+    '#b8af4f', // [12]    2.2. Formação Campestre
+    '#f1c232', // [13]    2.5. Outra Formação não Florestal
+    '#ffffb2', // [14]      3. Agropecuária
+    '#ffd966', // [15]    3.1. Pastagem
+    '#f6b26b', // [16]-
+    '#f99f40', // [17]-
+    '#e974ed', // [18]    3.2. Agricultura
+    '#d5a6bd', // [19]  3.2.1. Lavoura Temporária
+    '#c27ba0', // [20]3.2.1.2. Cana
+    '#FFEFC3', // [21]    3.3. Mosaico de Agricultura ou Pastagem
+    '#ea9999', // [22]      4. Área não Vegetada
+    '#dd7e6b', // [23]    4.3. Praia e Duna
+    '#aa0000', // [24]    4.1. Infraestrutura Urbana //'#aa0000'
+    '#FF8585', // [25]    4.4. Outra Área não Vegetada  //'#ff0000',
+    '#0000ff', // [26]      5. Corpo D'água
+    '#d5d5e5', // [27]      6. Não Observado
+    '#dd497f', // [28]-
+    '#665A3A', // [29]    2.4. Afloramento Rochoso
+    '#FF0000', // [30]    4.2. Mineração   //'#af2a2a'
+    '#8a2be2', // [31]  5.2.3. Aquicultura
+    '#968c46', // [32]    2.3. Apicum
+    '#0000ff', // [33]    5.1. Corpo dágua Natura
+    '#4fd3ff', // [34]    5.3. Glaciais
+    '#BA6A27', // [35]-
+    '#f3b4f1', // [36]  3.2.3. Lavoura Perene
+    '#02106f', // [37]    5.2. Corpo dágua Artificial
+    '#02106f', // [38]  5.2.1. Reservatórios
+    '#c59ff4', // [39]3.2.1.1. Soja
+    '#ba87f8', // [40]3.2.1.3. Arroz
+    '#e787f8', // [41]3.2.1.4. Outros
+    '#cca0d4', // [42]3.2.2.1. Café
+    '#d082de', // [43]3.2.2.1. Citrus
+    '#cd49e4', // [44]3.2.2.1. Caju
+    '#e04cfa', // [45]3.2.2.1. Outros
+];
+var years = [
+      1985, 1986, 
+      // 1987, 1988, 
+      // 1989, 1990, 1991, 1992, 
+      // 1993, 1994, 1995, 1996, 
+      // 1997, 1998, 1999, 2000, 
+      // 2001, 2002, 2003, 2004, 
+      // 2005, 2006, 2007, 2008, 
+      // 2009, 2010, 2011, 2012, 
+      // 2013, 2014, 2015, 2016, 
+      // 2017, 2018, 2019, 2020,
+      // 2021, 2022
+    ]
+
+// get band names list 
+var bandNames = ee.List(
+    years.map(
+        function (year) {
+            return 'classification_' + String(year);
+        }
+    )
+);
+
+var regionMosVector = ee.FeatureCollection(regionMosVector)//.filter(ee.Filter.eq('id_region', param.mosaicRegion))
+var regionMosRaster = ee.Image(regionMosRaster)//.eq(param.mosaicRegion).selfMask()
+
+var collect_mosaic = ee.ImageCollection(mosaics[0]).merge(ee.ImageCollection(mosaics[1]))
+                        .filterMetadata('region_code', 'equals', param.mosaicRegion)
+                        .select(['swir1_median', 'nir_median', 'red_median']);
+
+var setVersion = function(item) { return item.set('value', 35) };
+var ClasificacionRaster = ee.Image([]).select([])
+years.forEach(function(year){
+  var PalmaYear, assetId;
+  
+  assetId = 'projects/mapbiomas-raisg/DATOS_AUXILIARES/VECTORES/PERU/PALMA/'+'palma_'+ year
+  PalmaYear =  ee.FeatureCollection(assetId).map(setVersion).reduceToImage(['value'], ee.Reducer.first())
+
+  // if(param.mosaicRegion == 701 || param.mosaicRegion == 702) {
+  //       assetId = 'projects/mapbiomas-raisg/DATOS_AUXILIARES/VECTORES/PERU/PALMA/'+'palma_'+ year
+  //       PalmaYear =  ee.FeatureCollection(assetId).map(setVersion).reduceToImage(['value'], ee.Reducer.first())
+                             
+  // } else {
+  //   if(year == 2022) {
+  //       assetId = 'projects/mapbiomas-raisg/DATOS_AUXILIARES/VECTORES/PERU/PALMA/'+'palma_'+ year
+  //       PalmaYear=  ee.FeatureCollection(assetId).map(setVersion).reduceToImage(['value'], ee.Reducer.first())
+                             
+  //   } else {
+  //       PalmaYear = ee.Image('projects/mapbiomas-public/assets/peru/collection1/mapbiomas_peru_collection1_integration_v1').select('classification_' + String(year))
+  //                 .eq(30).multiply(30).selfMask()
+  //         }
+  // }
+  
+  PalmaYear = ee.Image(27).blend(PalmaYear).updateMask(regionMosRaster)
+  ClasificacionRaster = ClasificacionRaster.addBands(PalmaYear.rename('classification_' + String(year)))
+})
+
+print(ClasificacionRaster)         
+
+var ClasificacionRaster_reamp = remapWithPolygons(ClasificacionRaster, param.remapGeometry).updateMask(regionMosRaster);
+
+if(true){
+    ClasificacionRaster = ClasificacionRaster
+          .set('region', param.mosaicRegion)
+          .set('pais', param.country)
+          .set('version', param.outputVersion)
+          .set('descripcion', 'join');
+          
+    print('export:',ClasificacionRaster)
+    
+    var prefixo_out ='MINERIA-' + param.mosaicRegion + '-' +  param.country + '-'    
+    // EXPORTS 
+      Export.image.toAsset({
+          'image': ClasificacionRaster,
+          'description': prefixo_out+param.outputVersion,
+          'assetId': 'projects/mapbiomas-raisg/TRANSVERSALES/PERU/COLECCION5/PALMA/clasificacion'+'/' +prefixo_out+param.outputVersion,
+          'pyramidingPolicy': {
+              '.default': 'mode'
+          },
+          'region': regionMosVector.geometry().bounds(),
+          'scale': 30,
+          'maxPixels': 1e13
+      });
+   }
+    
+
+
+
+
+
+
+
+
+
+
+ 
+/**
+* Layers
+*/
+
+  param.years_view.forEach(function(year) {
+  
+    var vis = {
+        'bands': ['classification_' + year],
+        'min': 0,
+        'max': 45,
+        'palette': palette,
+        'format': 'png'
+     };
+
+    var mosaicYear = collect_mosaic.filterMetadata('year', 'equals', year)
+                                    .mosaic()
+                                    .updateMask(regionMosRaster);
+      
+    Map.addLayer(
+      mosaicYear,
+      {
+        bands: ['swir1_median', 'nir_median', 'red_median'],
+        gain: [0.08, 0.06, 0.2]
+      },
+      'MOSAICO ' + year.toString(), false
+    );
+    
+      Map.addLayer(
+      ClasificacionRaster,
+      vis,
+      'ClasificacionRaster-' + year, false)
+      
+      Map.addLayer(
+      ClasificacionRaster_reamp,
+      vis,
+      'ClasificacionRaster-remap-' + year, false)
+   });
+
+
+// if (true){
+//   //**********************************************
+//   // Imprimimos el gráfico de una clase
+//   print('Nota: Los gráficos a continuación son referenciales y para generarlos,',
+//         'se tuvo que re-escalar los datos de Landsat de 30m a 250m,',
+//         'por esto se recomienda manejarlos con precaución')
+  
+//   var bands= ee.List.sequence(1985,2022).getInfo();
+//   var clasificacion_v2 = ClasificacionRaster_reamp.eq(30).selfMask().multiply(6.25).selfMask()
+//   var Classif_Input = ClasificacionRaster.eq(30).selfMask().multiply(6.25).selfMask()
+//     var ImgGraph=ee.ImageCollection([])
+//     var ImgGraph_fill=ee.ImageCollection([])
+//     var Img1,Img2;
+//     bands.forEach(function(y){
+//       Img1 = Classif_Input.select('classification_'+y).rename('clase-'+30)
+//       Img1 = Img1.set('year',y)
+//       Img2 = clasificacion_v2.select('classification_'+y).rename('clase-'+30)
+//       Img2 = Img2.set('year',y)
+//       ImgGraph = ImgGraph.merge(Img1)
+//       ImgGraph_fill = ImgGraph_fill.merge(Img2)
+//     })
+//   print('Gráfico-Original-Clase '+30,ui.Chart.image.series({
+//         imageCollection:ImgGraph,
+//         region:Area_grafic, 
+//         reducer:ee.Reducer.sum(), 
+//         scale:250,
+//         xProperty:'year'
+//   })
+//   //.setSeriesNames(['Clase-'+param.claseGraph,'Clase-3'])
+//   .setChartType('LineChart')
+//                   .setOptions({
+//                     title: 'clase '+30+' - Original -  (rescalado a 250m)',
+//                     hAxis: {
+//                       title: 'year',
+//                       titleTextStyle: {italic: false, bold: true},
+//                     },
+//                     vAxis: {
+//                       title: 'Sup ha.',
+//                       titleTextStyle: {italic: false, bold: true}
+//                     },
+//                     //colors: ['f0af07', '0f8755', '76b349'],
+//                     colors: ['f0af07'],
+//                     // colors: [PALETTE[30]],
+//                     //colors: ['e37d05', '1d6b99'],
+//                     lineSize: 2})
+//     )
+// }
+
+  /**
+ * Función para remapear, de manera interactiva, zonas delimitadas por polígonos
+ * Estos polígonos se dibujan con las herramientas de dibujo de GEE y se indica el año o los años a aplicar
+ * y se definen como ee.FeatureCollection()
+ */
+function remapWithPolygons(image_classif, polygons) {
+      
+      if(polygons.length > 0) {  
+        polygons.forEach(function( polygon ) {
+          
+          var excluded = polygon.map(function( layer ){
+            
+            var area = image_classif.clip(layer);
+            var from = ee.String(layer.get('original')).split(',');
+            var to = ee.String(layer.get('new')).split(',');
+            
+            var t0 = ee.Number.parse(layer.get('t0'));
+            var t1 = ee.Number.parse(layer.get('t1'));
+            var yearsSel = ee.List.sequence(t0,t1,1)
+    
+            from = from.map( function( item ){
+              return ee.Number.parse( item );
+            });
+            to = to.map(function(item){
+              return ee.Number.parse( item );
+            });
+            
+            var remapRY = area;
+    
+            var imageOperation = function(year, previousImage) {
+              var remapYear = area.select(ee.String('classification_').cat(ee.Number(year).toInt16()))
+                                  .remap(from, to)
+                                  .rename(ee.String('classification_').cat(ee.Number(year).toInt16()));
+              
+              return ee.Image(previousImage).addBands(remapYear, null, true);
+            };
+            
+            remapRY = ee.Image(yearsSel.iterate(imageOperation, remapRY));
+            
+            return remapRY;
+          });
+          print('excluded',excluded);
+          excluded = ee.ImageCollection( excluded ).mosaic();
+          // Map.addLayer(excluded);
+          
+          image_classif = excluded.unmask( image_classif );
+          // image_classif = image_classif.mask( image_classif.neq(27) );
+        });
+      } else image_classif = image_classif;
+      
+  return image_classif;
+  
+}

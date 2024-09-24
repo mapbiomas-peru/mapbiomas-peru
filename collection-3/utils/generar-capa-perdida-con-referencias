@@ -1,0 +1,506 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var imageVisParam = {"opacity":1,"bands":["constant"],"min":30,"max":30,"palette":["b9bfce"]},
+    rg = ee.FeatureCollection("projects/ee-mapbiomasdesarrollo/assets/RegionesAltasyBajas"),
+    exclusion = 
+    /* color: #13fffa */
+    /* shown: false */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.FeatureCollection(
+        [ee.Feature(
+            ee.Geometry.Polygon(
+                [[[-70.01965296811449, -12.658481383335538],
+                  [-70.01965296811449, -12.661328678850554],
+                  [-70.01553309506761, -12.661328678850554],
+                  [-70.01553309506761, -12.658481383335538]]], null, false),
+            {
+              "value": 1,
+              "type": "exclusion",
+              "system:index": "0"
+            })]),
+    inclusion = 
+    /* color: #d63000 */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.FeatureCollection(
+        [ee.Feature(
+            ee.Geometry.Polygon(
+                [[[-74.99285599113477, -8.119904653445575],
+                  [-74.99285599113477, -8.120371989304813],
+                  [-74.99251266838087, -8.120371989304813],
+                  [-74.99251266838087, -8.119904653445575]]], null, false),
+            {
+              "value": 1,
+              "type": "inclusion",
+              "system:index": "0"
+            })]);
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+///PASO 1 TRANSVERSAL 
+// Este script suma las capas de referencia que se deseen para generar un ROI o máscara (de trabajo o de limpieza)
+// El ROI o Área de trabajo puede usar geometrias manuales para incluir o excluir áreas, por carta nacional
+// El script funciona para todos los años 1985 - 2024
+
+var param = {
+       pais:  'PERU',
+       yearsPreview: [2020,2024],
+       ID_pais: 8,
+       region : 701, 
+       BUFFER: 80,
+       referenciaAcc : 
+          [ // Selecionar  Referencias para acumular
+              'Perdida_MINAM_2001_2023',
+              
+             // 'Accumulated_Col2_15_Peru',
+             // 'Accumulated_Col2_18_Peru',
+             // 'Accumulated_Col2_35_Peru',
+             // 'Accumulated_Col2_21_Peru',
+             // 'Accumulated_Col2_23_Peru',
+             // 'Accumulated_Col2_24_Peru',
+             // 'Accumulated_Col2_25_Peru',
+             // 'Accumulated_Col2_30_Peru',
+             // 'Accumulated_Col2_68_Peru',
+             
+              'Accumulated_Col6_15_Amazonia',
+              'Accumulated_Col6_18_Amazonia',
+              'Accumulated_Col6_35_Amazonia',
+              'Accumulated_Col6_21_Amazonia',
+              'Accumulated_Col6_23_Amazonia',
+              'Accumulated_Col6_24_Amazonia',
+              'Accumulated_Col6_25_Amazonia',
+              'Accumulated_Col6_30_Amazonia',
+              'Accumulated_Col6_68_Amazonia',
+          ],
+       filtroEspacial:{ //OPCIONAL
+         usar: true,
+         pixelsAgrupadosMin: 20,  //pixeles agrupados
+         },
+       bufferProporcionalArea:{ //OPCIONAL
+         usar:false ,   // si es FALSE se usará para todos BUFFER
+         threshold: 800, // numero de pixeles acumulado 
+         lowerbuffer: 100
+       },
+       version : 1,
+       exportdrive: false,
+       inclusion: inclusion,
+       exclusion: exclusion
+  }
+
+var assetCountries = 'projects/mapbiomas-raisg/DATOS_AUXILIARES/VECTORES/paises-4';
+var assetCountriesRaster = "projects/mapbiomas-raisg/DATOS_AUXILIARES/RASTERS/paises-4";
+var assetRegionClasVector = 'projects/mapbiomas-peru/assets/LAND-COVER/COLLECTION3/AUXILIARY-DATA/VECTOR/per-regiones-clasificacion-mbperu-3'; 
+//var assetRegionClasVector = 'projects/mapbiomas-raisg/MAPBIOMAS-PERU/DATOS-AUXILIARES/VECTORES/per-cartas-nacionales-100000';
+var integrationP2 = ee.Image('projects/mapbiomas-public/assets/peru/collection2/mapbiomas_peru_collection2_integration_v1');
+var integrationA6 = ee.Image('projects/mapbiomas-raisg/MAPBIOMAS-PERU/COLECCION3/INTEGRACION/integracion-pais/PERU-AMAZONIA6-3');
+
+var setVersion = function(item) { return item.set('version', 1) }
+var SelRegion = ee.FeatureCollection(assetRegionClasVector)
+                  .filter(ee.Filter.eq('id_region', param.region))
+print(SelRegion, 'selregion')
+Map.addLayer(SelRegion, {},'region mosaico',true);
+
+
+var regionMask = SelRegion
+      .map(setVersion)
+      .reduceToImage(['version'], ee.Reducer.first());
+
+var palette = require('users/mapbiomas/modules:Palettes.js').get('classification8');
+
+var vis = { min: 0, max: 62, palette: palette };
+
+var featureSpace = [
+      "blue_median",
+      "green_median",
+      "red_median",
+      "nir_median",
+      "swir1_median",
+      "swir2_median",
+      
+      "ndvi_amp",
+      "savi_stdDev",
+      "ndwi_mcfeeters_amp",
+      "ndvi_stdDev",
+      "evi2_amp",
+      "evi2_stdDev",
+      "wefi_stdDev",
+      "ndwi_gao_wet_max",
+      "ndwi_gao_amp",
+      "nir_stdDev",
+      "wefi_amp",
+      "gv_amp",
+      "ndmir_stdDev",
+      "ndwi_gao_wet_qmo",
+      "ndsi2_wet",
+      "gv_stdDev",
+      "ndwi_gao_wet",
+      //"ndfib_amp",
+      "ndbi_min",
+      "red_min",
+      //"ndgb_stdDev",
+      //"gvs_wet",
+      "swir2_wet",
+      "swir1_wet",
+      "swir1_min",
+      "ndmi_max",
+      "green_wet_min",
+      "ndsi2_min",
+      "ndfi_wet",
+      "ndrb_min",
+      
+      // "slope",
+      // "gv",
+      // "npv",
+      // "soil",
+      //"cloud",
+      // "snow",
+      // "shade"
+              ];
+var mosaics = ee.ImageCollection("projects/mapbiomas-raisg/MOSAICOS/mosaics-2")
+             .merge(ee.ImageCollection('projects/nexgenmap/MapBiomas2/LANDSAT/PANAMAZON/mosaics-2'))
+              .filter(ee.Filter.eq('country', "PERU")) ;
+
+var mosaicCollections = [
+ ee.ImageCollection("projects/mapbiomas-raisg/MOSAICOS/mosaics-2").filterMetadata('country', 'equals', "PERU"),
+ ee.ImageCollection("projects/nexgenmap/MapBiomas2/LANDSAT/PANAMAZON/mosaics-2").filterMetadata('country', 'equals', "PERU")
+];
+
+var joinedMosaic = mosaicCollections[0].merge(mosaicCollections[1]);
+
+
+  var SamplesList = ee.List([]);
+  param.yearsPreview.forEach(function(year){
+    
+    
+    var finalMosaic = ee.ImageCollection([]);
+
+     // Definir una función para filtrar y crear mosaicos por año y región
+     var filterAndMosaic = function(regionCode) {
+       return joinedMosaic
+        .filterMetadata('year', 'equals', year)
+         .filterMetadata({ name: "region_code", operator: "equals", value: regionCode })
+         .map(function(image) {
+           return image.updateMask(regionMask);
+         })
+     };
+    
+     var regions = [701, 702, 703, 704, 705];
+     regions.forEach(function(regionCode) {
+       var mos = filterAndMosaic(regionCode);
+      // print(mos,"mos")
+       finalMosaic = finalMosaic.merge(mos);
+     });
+          var visualization1 = {bands: ['swir2_median', 'green_median', 'blue_median'],min:200, max:1600, gamma:1.3};
+          var visualization2 = {bands: ['nir_median', 'swir1_median', 'red_median'],gain: [0.08, 0.06, 0.2]};
+          var visualization3 = {bands: ['nir_median', 'red_median', 'green_median'],gain: [0.08, 0.06, 0.2]};
+          Map.addLayer(finalMosaic.mosaic().updateMask(regionMask), visualization1, 'Mosaico' + year + '  (S,G,B)', false);
+
+        }  
+
+  );
+
+
+var getStablePixels = function (image, classes) {
+  
+  var bandNames = image.bandNames(),
+      images = [];
+
+  classes.forEach(function(classId){
+      var previousBand = image
+        .select([bandNames.get(0)]).eq(classId);
+          
+      var singleClass = ee.Image(
+        bandNames.slice(1)
+          .iterate(
+            function( bandName, previousBand ) {
+              bandName = ee.String( bandName );
+              return image
+                .select(bandName).eq(classId)
+                .multiply(previousBand);
+            },
+            previousBand
+          )
+      );
+      
+      singleClass = singleClass
+        .updateMask(singleClass.eq(1))
+        .multiply(classId);
+      
+      images.push(singleClass);
+  });
+  
+  
+  // blend all images
+  var allStable = ee.Image();
+  
+  for(var i = 0; i < classes.length; i++) 
+    allStable = allStable.blend(images[i]);
+
+  return allStable;
+};
+
+var classes = ee.List.sequence(0, 34).getInfo();
+print(classes)
+
+var agricultureP2_15 = integrationP2.eq(21)
+var agricultureP2_18 = integrationP2.eq(18)
+var agricultureP2_35 = integrationP2.eq(35)
+var agricultureP2_21 = integrationP2.eq(21)
+var agricultureP2_23 = integrationP2.eq(23)
+var agricultureP2_24 = integrationP2.eq(24)
+var agricultureP2_25 = integrationP2.eq(25)
+var agricultureP2_30 = integrationP2.eq(30)
+var agricultureP2_68 = integrationP2.eq(68)
+
+var agricultureA6_15 = integrationA6.eq(15)
+var agricultureA6_18 = integrationA6.eq(18)
+var agricultureA6_35 = integrationA6.eq(35)
+var agricultureA6_21 = integrationA6.eq(21)
+var agricultureA6_23 = integrationA6.eq(23)
+var agricultureA6_24 = integrationA6.eq(24)
+var agricultureA6_25 = integrationA6.eq(25)
+var agricultureA6_30 = integrationA6.eq(30)
+var agricultureA6_68 = integrationA6.eq(68)
+
+var acumuladoP2_15 = agricultureP2_15.reduce('max').multiply(15).selfMask()
+var acumuladoP2_18 = agricultureP2_18.reduce('max').multiply(18).selfMask()
+var acumuladoP2_35 = agricultureP2_35.reduce('max').multiply(35).selfMask()
+var acumuladoP2_21 = agricultureP2_21.reduce('max').multiply(21).selfMask()
+var acumuladoP2_23 = agricultureP2_23.reduce('max').multiply(23).selfMask()
+var acumuladoP2_24 = agricultureP2_24.reduce('max').multiply(24).selfMask()
+var acumuladoP2_25 = agricultureP2_25.reduce('max').multiply(25).selfMask()
+var acumuladoP2_30 = agricultureP2_30.reduce('max').multiply(30).selfMask()
+var acumuladoP2_68 = agricultureP2_68.reduce('max').multiply(68).selfMask()
+
+var acumuladoA6_15 = agricultureA6_15.reduce('max').multiply(15).selfMask()
+var acumuladoA6_18 = agricultureA6_18.reduce('max').multiply(18).selfMask()
+var acumuladoA6_35 = agricultureA6_35.reduce('max').multiply(35).selfMask()
+var acumuladoA6_21 = agricultureA6_21.reduce('max').multiply(21).selfMask()
+var acumuladoA6_23 = agricultureA6_23.reduce('max').multiply(23).selfMask()
+var acumuladoA6_24 = agricultureA6_24.reduce('max').multiply(24).selfMask()
+var acumuladoA6_25 = agricultureA6_25.reduce('max').multiply(25).selfMask()
+var acumuladoA6_30 = agricultureA6_30.reduce('max').multiply(30).selfMask()
+var acumuladoA6_68 = agricultureA6_68.reduce('max').multiply(68).selfMask()
+
+//Referencias  
+
+var Perdida_MINAM_2023 = ee.Image("projects/mapbiomas-peru/assets/LAND-COVER/AUXILIARY-DATA/RASTER/PNCB_forestloss_2001_2023").rename('Perdida_MINAM_2001_2023').updateMask(regionMask);
+
+var Ref_acumuladoP2_15  = acumuladoP2_15.updateMask(regionMask).rename('Accumulated_Col2_15_Peru')
+var Ref_acumuladoP2_18  = acumuladoP2_18.updateMask(regionMask).rename('Accumulated_Col2_18_Peru')
+var Ref_acumuladoP2_35  = acumuladoP2_35.updateMask(regionMask).rename('Accumulated_Col2_35_Peru')
+var Ref_acumuladoP2_21  = acumuladoP2_21.updateMask(regionMask).rename('Accumulated_Col2_21_Peru')
+var Ref_acumuladoP2_23  = acumuladoP2_23.updateMask(regionMask).rename('Accumulated_Col2_23_Peru')
+var Ref_acumuladoP2_24  = acumuladoP2_24.updateMask(regionMask).rename('Accumulated_Col2_24_Peru')
+var Ref_acumuladoP2_25  = acumuladoP2_25.updateMask(regionMask).rename('Accumulated_Col2_25_Peru')
+var Ref_acumuladoP2_30  = acumuladoP2_30.updateMask(regionMask).rename('Accumulated_Col2_30_Peru')
+var Ref_acumuladoP2_68  = acumuladoP2_68.updateMask(regionMask).rename('Accumulated_Col2_68_Peru')
+
+var Ref_acumuladoA6_15  = acumuladoA6_15.updateMask(regionMask).rename('Accumulated_Col6_15_Amazonia')
+var Ref_acumuladoA6_18  = acumuladoA6_18.updateMask(regionMask).rename('Accumulated_Col6_18_Amazonia')
+var Ref_acumuladoA6_35  = acumuladoA6_35.updateMask(regionMask).rename('Accumulated_Col6_35_Amazonia')
+var Ref_acumuladoA6_21  = acumuladoA6_21.updateMask(regionMask).rename('Accumulated_Col6_21_Amazonia')
+var Ref_acumuladoA6_23  = acumuladoA6_23.updateMask(regionMask).rename('Accumulated_Col6_23_Amazonia')
+var Ref_acumuladoA6_24  = acumuladoA6_24.updateMask(regionMask).rename('Accumulated_Col6_24_Amazonia')
+var Ref_acumuladoA6_25  = acumuladoA6_25.updateMask(regionMask).rename('Accumulated_Col6_25_Amazonia')
+var Ref_acumuladoA6_30  = acumuladoA6_30.updateMask(regionMask).rename('Accumulated_Col6_30_Amazonia')
+var Ref_acumuladoA6_68  = acumuladoA6_68.updateMask(regionMask).rename('Accumulated_Col6_68_Amazonia')
+
+//var resultadoStable = getStablePixels(integration.updateMask(mining), classes).rename('Stable_Col2').updateMask(regionMask);
+
+
+var ACUMULADO_TOTAL = ee.Image(0).addBands(Perdida_MINAM_2023)
+
+                                 .addBands(Ref_acumuladoP2_15)
+                                 .addBands(Ref_acumuladoP2_18)
+                                 .addBands(Ref_acumuladoP2_35)
+                                 .addBands(Ref_acumuladoP2_21)
+                                 .addBands(Ref_acumuladoP2_23)
+                                 .addBands(Ref_acumuladoP2_24)
+                                 .addBands(Ref_acumuladoP2_25)
+                                 .addBands(Ref_acumuladoP2_30)
+                                 .addBands(Ref_acumuladoP2_68)
+                                 
+                                 .addBands(Ref_acumuladoA6_15)
+                                 .addBands(Ref_acumuladoA6_18)
+                                 .addBands(Ref_acumuladoA6_35)
+                                 .addBands(Ref_acumuladoA6_21)
+                                 .addBands(Ref_acumuladoA6_23)
+                                 .addBands(Ref_acumuladoA6_24)
+                                 .addBands(Ref_acumuladoA6_25)
+                                 .addBands(Ref_acumuladoA6_30)
+                                 .addBands(Ref_acumuladoA6_68)
+                                 
+                                 .updateMask(regionMask);
+
+print(ACUMULADO_TOTAL.bandNames(), 'acumulado total')
+var ACUMULADO_TOTAL_sel = ACUMULADO_TOTAL.select(param.referenciaAcc).reduce('sum')
+                          .divide(ACUMULADO_TOTAL.select(param.referenciaAcc).reduce('sum'))
+                          .multiply(21).rename('constant').selfMask();
+
+Map.addLayer(ACUMULADO_TOTAL_sel,{bands: ["constant"], max: 21, min: 21, opacity: 1, palette: ["ca272e"]},'Capas referencia unidas',false)
+
+
+
+function NamecountryCase (name){
+          var paisLowerCase =''
+          switch (name) {
+            case "PERU":
+                paisLowerCase = 'Perú';
+                break;
+            case "GUIANA_FRANCESA":
+                paisLowerCase = 'Guiana Francesa';
+                break;
+            case "VENEZUELA":
+                paisLowerCase = 'Venezuela';
+                break;
+            case "GUYANA":
+                paisLowerCase = 'Guyana';
+                break;
+            case "COLOMBIA":
+                paisLowerCase = 'Colombia';
+                break;
+            case "BRASIL":
+                paisLowerCase = 'Brasil';
+                break;
+            case "ECUADOR":
+                paisLowerCase = 'Ecuador';
+                break;
+            case "SURINAME":
+                paisLowerCase = 'Suriname';
+                break;
+            case "BOLIVIA":
+                paisLowerCase = 'Bolivia'
+            }
+  return paisLowerCase
+}
+
+var country = ee.FeatureCollection(assetCountries)
+                .filterMetadata('name', 'equals', NamecountryCase(param.pais));
+                  
+// Map.addLayer(country, {}, 'country', false);
+
+var countryraster = ee.Image(assetCountriesRaster).eq(param.ID_pais).selfMask()
+
+var image_export = ACUMULADO_TOTAL_sel.gte(1).updateMask(regionMask).toUint8()
+
+image_export= image_export.reproject('EPSG:4326', null, 21)
+var conect = image_export.connectedPixelCount(1000).rename('connected')
+  
+if(param.filtroEspacial.usar){
+  // var valuePix = param.filtroEspacial.pixelsAgrupadosMin*100
+  // print('valuePix:',valuePix)
+
+  Map.addLayer(conect,{"bands":["connected"],"min":1,"max":100 ,"palette":["b90000","ff0000","ffbf10","f2ff1b","23ff47","10c9ff"]},'conect',false)
+  print(conect.projection().nominalScale())
+  image_export = image_export.mask(conect.select('connected').gte(param.filtroEspacial.pixelsAgrupadosMin))
+
+ }
+ 
+if(param.bufferProporcionalArea.usar === false){
+  var ACUMULADO_TOTAL_sel_BUFFER = ee.Image(1)
+    .cumulativeCost({
+      source: image_export, 
+      maxDistance: param.BUFFER,
+    }).lt(param.BUFFER);
+    ACUMULADO_TOTAL_sel_BUFFER = ee.Image(0).where(ACUMULADO_TOTAL_sel_BUFFER.eq(1), 1).selfMask().updateMask(regionMask)
+    
+  var resultado = ACUMULADO_TOTAL_sel_BUFFER.reduceRegion({
+    reducer: ee.Reducer.mean(),
+    geometry: ACUMULADO_TOTAL_sel_BUFFER.geometry(),
+    scale: 150,  // Prueba con una escala menor
+    maxPixels: 1e13  ,
+    tileScale: 14
+  });
+
+  Map.addLayer(ACUMULADO_TOTAL_sel_BUFFER,{"palette":"ff0a0a", "opacity":0.6},'Capas + Buffer estandar',false)
+}
+
+if(param.bufferProporcionalArea.usar){
+  var image_export1 = image_export.mask(conect.select('connected').gte(param.bufferProporcionalArea.threshold)).selfMask()
+  var ACUMULADO_TOTAL_sel_BUFFER1 = ee.Image(1) 
+    .cumulativeCost({
+      source: image_export1, 
+      maxDistance: param.BUFFER,
+    }).lt(param.BUFFER);
+    ACUMULADO_TOTAL_sel_BUFFER1 = ee.Image(0).where(ACUMULADO_TOTAL_sel_BUFFER1.eq(1), 1).selfMask()
+    
+  var image_export2 = image_export.mask(conect.select('connected').lt(param.bufferProporcionalArea.threshold)).selfMask()
+  var ACUMULADO_TOTAL_sel_BUFFER2 = ee.Image(1)
+    .cumulativeCost({
+      source: image_export2, 
+      maxDistance: param.bufferProporcionalArea.lowerbuffer,
+    }).lt(param.bufferProporcionalArea.lowerbuffer);
+    ACUMULADO_TOTAL_sel_BUFFER2 = ee.Image(0).where(ACUMULADO_TOTAL_sel_BUFFER2.eq(1), 1).selfMask()
+    
+  var ACUMULADO_TOTAL_sel_BUFFER = ee.Image(0).where(ACUMULADO_TOTAL_sel_BUFFER1, 1)
+                                              .where(ACUMULADO_TOTAL_sel_BUFFER2, 1)
+                                              .updateMask(regionMask)
+                                              .selfMask()
+  var resultado = ACUMULADO_TOTAL_sel_BUFFER.reduceRegion({
+    reducer: ee.Reducer.mean(),
+    geometry: ACUMULADO_TOTAL_sel_BUFFER.geometry(),
+    scale: 60,  // Prueba con una escala menor
+    maxPixels: 1e13  ,
+    tileScale: 16
+  });
+  
+  Map.addLayer(ACUMULADO_TOTAL_sel_BUFFER,{},'Capas + Buffer proporcional')
+  Map.addLayer(
+    ACUMULADO_TOTAL_sel.updateMask(regionMask),//.reproject('EPSG:4326', null, 30),
+    {min:0, max:param.referenciaAcc.length,palette:['fff829','ffce45','ff920a','ff6e19','ff0000','b30000']},
+    'Final export', true
+  );
+  
+
+ }
+ 
+/**
+ * Inclu exclu
+ */
+var inclus_exclu = function(capa, inclu, exclu){
+    var inclusionRegions = ee.FeatureCollection(inclu).reduceToImage(['value'], ee.Reducer.first()).eq(1);
+    var exclusionRegions = ee.FeatureCollection(exclu).reduceToImage(['value'], ee.Reducer.first()).eq(1);
+    capa = ee.Image(capa).where(exclusionRegions.eq(1), 0).selfMask();        
+    capa = ee.Image(0).where(capa.eq(1), 1)
+                      .where(inclusionRegions.eq(1), 1).selfMask();
+    return capa;
+};
+ 
+ACUMULADO_TOTAL_sel_BUFFER = inclus_exclu(ACUMULADO_TOTAL_sel_BUFFER, param.inclusion, param.exclusion);
+
+Map.addLayer(ACUMULADO_TOTAL_sel_BUFFER,{},'Final export (+geometrias)',false)
+
+
+
+if(param.exportdrive){
+//Export the image, specifying scale and region.
+Export.image.toDrive({
+  image: ACUMULADO_TOTAL_sel_BUFFER,
+  description: 'ROI_INTERVENCION'+'-' + param.pais + '-'+ param.version,
+  scale: 30,
+  maxPixels: 1e13,
+  folder:'EXPORT-INTERVENCION',
+  region: country.geometry().bounds(),
+  shardSize:1024
+});
+}
+
+Export.image.toAsset({
+  image: ACUMULADO_TOTAL_sel_BUFFER,
+  description: param.pais +'-INTERVENCION-ROI-'+ param.region + '-'+ param.version,
+  assetId:'projects/mapbiomas-peru/assets/LAND-COVER/COLLECTION3/AGRICULTURE/'+ param.pais +'-INTERVENCION-ROI-'+ param.region + '-'+ param.version,
+  scale: 30,
+  pyramidingPolicy: {
+    '.default': 'mode'
+  },
+  maxPixels: 1e13,
+  region: country.geometry().bounds()
+});
+
+
+

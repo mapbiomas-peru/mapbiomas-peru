@@ -1,0 +1,38 @@
+ 
+var assetInput = [
+    // "projects/nexgenmap/MapBiomas2/LANDSAT/PANAMAZON/mosaics-2",
+    // "projects/mapbiomas-raisg/MOSAICOS/mosaics-2",
+    // "projects/mapbiomas-raisg/MOSAICOS/mosaics-s2",
+    // "projects/mapbiomas-raisg/COLECCION5/clasificacion",
+    // "projects/mapbiomas-raisg/COLECCION5/clasificacion-ft",
+    "projects/mapbiomas-raisg/COLECCION5/clasificacion",
+    "projects/mapbiomas-raisg/COLECCION5/clasificacion-ft"
+ ];
+
+
+assetInput.forEach(
+    function (assetid) {
+
+        var collection = ee.ImageCollection(assetid)
+                          // .filter(ee.Filter.eq('country', 'PERU'))
+                          .filter(ee.Filter.eq('pais', 'PERU'))
+                          // .filter(ee.Filter.eq('version', '5'))
+                          // .filter(ee.Filter.eq('year', 2023));
+        print(collection)
+        
+        var assetSize = collection.aggregate_sum('system:asset_size');
+        var assetSize_mean = collection.aggregate_mean('system:asset_size');
+        var assetNFiles = collection.size();
+
+        print(
+            assetid,
+            assetNFiles,
+            '***TOTAL',
+            assetSize.divide(ee.Number(1024).pow(4)),
+            'TBytes',
+            '***MEAN',
+            assetSize_mean.divide(ee.Number(1024).pow(3)),
+            'GBytes'
+        );
+    }
+);

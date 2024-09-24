@@ -1,0 +1,144 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var INCLUSION_PLAYAS = /* color: #d63000 */ee.FeatureCollection(
+        [ee.Feature(
+            ee.Geometry.Point([-75.31964192418091, -7.848130734029763]),
+            {
+              "system:index": "0"
+            })]);
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+// set country name
+var countryName = 'Perú';
+
+// set year for the mosaic
+var years = [1985, 2000, 2010, 2020, 2022]
+
+// list of assets
+var assetDef = 'users/sad/project/raisg/deforestation-col4-2/deforestation-peru-col4-1-ft';
+var assetMos = 'projects/mapbiomas-raisg/MOSAICOS/mosaics-2';
+var assetCla = 'projects/mapbiomas-raisg/public/collection4/mapbiomas_raisg_panamazonia_collection4_integration_v1';
+var assetCountry = 'users/sad/project/raisg/database/country';
+var palette = require('users/mapbiomas/modules:Palettes.js');
+
+// Mosaic
+//------------Mosaico-----------
+//Assets mosaicos
+
+var regionesMosaicRaster = 'projects/mapbiomas-raisg/DATOS_AUXILIARES/RASTERS/clasificacion-mosaicos-4'
+var assetMosaic = "projects/nexgenmap/MapBiomas2/LANDSAT/PANAMAZON/mosaics-2";
+var assetMosaicP2 = 'projects/mapbiomas-raisg/MOSAICOS/mosaics-2';
+var regionMosaicRaster  = ee.Image(regionesMosaicRaster).rename(['regions'])
+
+var getMosaic = function(paths, regionRaster, Listyears) {
+  
+      // Mosaic
+      regionRaster = regionRaster.where(regionRaster.eq(211),210)
+      regionRaster = regionRaster.where(regionRaster.eq(205),210)
+      var Mosaic_coll = ee.ImageCollection(paths[0]).merge(ee.ImageCollection(paths[1]))
+                                                    .filter(ee.Filter.inList('year',Listyears))
+                        .filterMetadata('country', 'equals', 'PERU')
+                        // .select(['swir1_median', 'nir_median', 'red_median'])
+                        .map(
+                            function (image) {
+                                return image.updateMask(
+                                    regionRaster.eq(ee.Number.parse(image.get('region_code')).toInt16()));
+                            }
+                        );
+                        
+                          
+
+      // Aditional Bands
+      var joinedMosaics = Mosaic_coll;
+                  
+      
+      // Select variables 
+      return joinedMosaics;
+      
+  };
+
+var mosaicsRAISG = getMosaic([assetMosaic,assetMosaicP2], regionMosaicRaster, years);
+var palettes = require('users/mapbiomas/modules:Palettes.js');
+var mapbiomasPalette = palettes.get('classification8');
+for (var yearI=0;yearI<years.length;yearI++) {
+  var vis = {
+      'bands': 'classification_'+years[yearI],
+          'min': 0,
+          'max': 62,
+          'palette': mapbiomasPalette,
+  };
+  
+  var mosaicYear = mosaicsRAISG
+                    .filterMetadata('year', 'equals', years[yearI])
+                    .mosaic();
+  
+  Map.addLayer(mosaicYear,{
+          "bands":["swir1_median","nir_median","red_median"],
+          // "min":407,"max":3381,
+          'gain': [0.08, 0.06, 0.08],
+          'gamma': 0.65
+  }, 'Mosaic' + years[yearI],false);
+  
+}
+
+
+var agua_acumulado = ee.Image('projects/mapbiomas-raisg/MAPBIOMAS-PERU/DATOS-AUXILIARES/RASTER/ACUMULADO/acumulado-C2-ID33')
+  Map.addLayer(agua_acumulado,{palette:['1f1762']},'Agua_Acumulado_85_22',true)
+  
+  
+var regiones_clasificacion =ee.FeatureCollection("projects/mapbiomas-raisg/MAPBIOMAS-PERU/DATOS-AUXILIARES/VECTORES/per-regiones-clasificacion-mbperu-3");
+
+Map.addLayer(regiones_clasificacion.style({
+  color: 'ff0000',
+  fillColor: '00000000'
+}),{},'regiones_clasificacion', false)
+
+  
+  
+var regiones_mosaico =ee.FeatureCollection("projects/mapbiomas-raisg/MAPBIOMAS-PERU/DATOS-AUXILIARES/VECTORES/per-regiones-mosaicos-mbperu-3");
+
+Map.addLayer(regiones_mosaico.style({
+  color: '140f3f',
+  fillColor: '00000000'
+}),{},'regiones_mosaico', false)
+
+
+
+
+// // set dark style
+// var mapp = require('users/joaovsiqueira1/packages:Mapp.js');
+
+// Map.setOptions({
+//     'styles': {
+//         'Dark': mapp.getStyle('Dark')
+//     }
+// });
+
+// BUSCAR PUNTO
+
+// Map.centerObject(country);
+
+// var punto = ee.Geometry.Point([-71.82771, -3.8013]);
+// Map.addLayer(punto)
+// Map.centerObject(punto)
+
+
+// //EXPORTAR GEOMETRIAS
+
+// // geometries
+// var GeometriesIE = ee.FeatureCollection(INCLUSION)
+// print(GeometriesIE.size()) 
+
+// // export to asset
+
+// var operador = 'zonaPedro'
+// var fileName = 'polygons-' + countryName  + '-'+ operador
+// var assetIdG = 'projects/mapbiomas-raisg/MAPBIOMAS-PERU/COLECCION3/MUESTRAS/PERDIDA-BOSQUE-2024/' + fileName;
+// Export.table.toAsset(GeometriesIE, fileName, assetIdG)
+
+
+// AGREGAR POLIGONOS DIBUJADOS COMO ASSETS
+
+// var poligonos = ee.FeatureCollection('projects/mapbiomas-raisg/MAPBIOMAS-PERU/COLECCION3/MUESTRAS/PERDIDA-BOSQUE-2024/polygons-Peru-zonaPedro')
+// Map.addLayer(poligonos.style({
+//   color: '000000',
+//   fillColor: 'b32b1b'
+// }),{},'poligonos', true)

@@ -1,0 +1,58 @@
+// Este script toma una región de interés y extrae la información LULC de la colección 2 para exportarlo en raster
+var param = {
+  years_viz_export: [2022], // Año de visualizacion en el mapa y exportacion
+  nombre: "ROI", //especificar nombre del area
+  drive_folder: "COL2-MBPERU",  // Folder en Drive donde se almacenará los vectores y estadísticas.
+  years_stats_export: ee.List.sequence(1985, 2022, 1).getInfo()  // Años que se exportarán en las estadísticas.
+}
+
+ 
+//Región de Interés 
+var roi = ee.FeatureCollection("projects/mapbiomas-raisg/MAPBIOMAS-PERU/DATOS-AUXILIARES/VECTORES/solicitud_AIDER")
+
+
+//Colección 2
+var asset = 'projects/mapbiomas-raisg/MAPBIOMAS-PERU/COLECCION2/INTEGRACION/mapbiomas_peru_collection2_integration_v1'
+var image = ee.Image(asset)
+var image_mapbiomas = image.clip(roi)
+
+//Paleta de colores
+var palettes = require('users/mapbiomas/modules:Palettes.js');
+
+var vis = {
+    'min': 0,
+    'max': 62,
+    'palette': palettes.get('classification8')
+};
+
+Map.addLayer(roi.style({fillColor: '00000000', color:'blue'}),{},
+         param.nombre)
+         
+
+Map.centerObject(roi,8)        
+
+
+
+// Exportar raster
+
+for (var i = 0; i < param.years_viz_export.length; i++) {
+    var year = param.years_viz_export[i];
+    
+    // Selecciona la imagen de clasificación para el año correspondiente.
+    var img_mapbiomas = image_mapbiomas.select('classification_' + year);
+    Map.addLayer(img_mapbiomas,vis,'clasification '+ year);
+
+    // Exporta la imagen raster.
+    Export.image.toDrive({
+        image: img_mapbiomas,
+        description: 'Raster_Export_' + param.nombre.replace(/ /g, "") + '_' + year,
+        folder: param.drive_folder,
+        fileNamePrefix: 'Raster_Export_' + param.nombre.replace(/ /g, "") + '_' + year,
+        scale: 30,
+        region: roi.geometry().bounds(),
+        maxPixels: 1e12,
+        fileFormat: 'GeoTIFF'
+    });
+}
+
+

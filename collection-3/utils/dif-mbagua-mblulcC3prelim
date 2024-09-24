@@ -1,0 +1,299 @@
+// Parametros
+
+var param = {
+  year: 2022,                   // Comparacion hasta el año 2023
+  month: 8,
+  step: 'Remap',                // Clasificacion, Iteracion, Gap, Filtro_espacial, Remap
+  frecuencia: 6,
+  producto: 'MB-Peru-C3',       // GSW, MB-Peru-C1, MB-Peru-C2, MB-Peru-C3
+  pais: false,                   // visualizacion para todo el país
+  mask_subregion: false,        // visualizacion para subregiones específicas
+  n_subregion: [1302],
+  mask_bioma: true,            // visualizacion para biomas específicos
+  n_bioma: [702]//
+}
+
+
+// Assets actualizados
+
+var clasif = ee.ImageCollection('projects/mapbiomas-raisg/MAPBIOMAS-WATER/COLECCION2/PERU/PROCESSING/clasificacion-01')
+var ite = ee.ImageCollection('projects/mapbiomas-raisg/MAPBIOMAS-WATER/COLECCION2/PERU/POSTPROCESSING/02-mask-02')
+var gap = ee.ImageCollection('projects/mapbiomas-raisg/MAPBIOMAS-WATER/COLECCION2/PERU/POSTPROCESSING/03-gap-03')
+var f_espacial = ee.ImageCollection("projects/mapbiomas-raisg/MAPBIOMAS-WATER/COLECCION2/PERU/POSTPROCESSING/04-filtro-espacial-01")  //Ultima version del remap
+var remap = ee.ImageCollection("projects/mapbiomas-raisg/MAPBIOMAS-WATER/COLECCION2/PERU/POSTPROCESSING/05-remap-03-regiones")
+// Limites vectoriales
+
+//var RegionVec = ee.FeatureCollection('projects/mapbiomas-raisg/PRODUCTOS/AGUA/DATOS_AUXILIARES/VECTOR/PERU/clasificacion-regiones-agua-v2')
+var RegionVec = ee.FeatureCollection("projects/mapbiomas-raisg/MAPBIOMAS-WATER/COLECCION2/PERU/DATOS_AUXILIARES/VECTORES/regiones_agua_c2")
+var BiomasVec = ee.FeatureCollection('projects/mapbiomas-raisg/DATOS_AUXILIARES/VECTORES/clasificacion-mosaicos-4')
+
+var table = ee.FeatureCollection('projects/mapbiomas-raisg/DATOS_AUXILIARES/VECTORES/paises-4');
+var pais = table.filter(ee.Filter.eq('pais', "Perú"));
+
+
+// Configuración para el step Clasificacion
+
+// var numB_ab,numB_andes,numB_ab2 
+// var years = ee.List.sequence(1985,2023).getInfo()
+
+// var clasif_water = ee.ImageCollection([])
+
+// years.forEach(function(year){
+//   var img_ab = clasif.filter(ee.Filter.eq('year',year))
+//                   .filter(ee.Filter.eq('region',0))
+//                   .mosaic().set('year',year)
+//   numB_ab = img_ab.bandNames().length().gt(0)
+//   img_ab = ee.Image(ee.Algorithms.If(numB_ab,img_ab.clip(pais),ee.Image([])))
+  
+//   var img_andes = clasif.filter(ee.Filter.eq('year',year))
+//                   .filter(ee.Filter.eq('grid_name',''))
+//                   .mosaic().set('year',year)
+//   numB_andes = img_andes.bandNames().length().gt(0)
+//   img_andes = ee.Image(ee.Algorithms.If(numB_andes,img_andes.clip(RegionVec),ee.Image([])))
+  
+//   var img_ab_clip = ee.Image(ee.Algorithms.If(numB_ab,img_ab.mask(img_andes.unmask(0).eq(0)).selfMask(),ee.Image([])))
+//   numB_ab2 = img_ab_clip.bandNames().length().gt(0)
+  
+//   var img_unido = ee.Image(ee.Algorithms.If(numB_ab2,img_ab_clip.unmask(img_andes),img_andes))
+
+//   clasif_water = clasif_water.merge(img_unido)
+// })
+
+
+// Selección del step a utilizar
+
+if (param.step == 'Clasificacion'){
+    // clasif = clasif_water
+    var collection = clasif
+}
+
+if (param.step == 'Iteracion'){
+    var collection = ite
+    
+    // if (param.version == 1){
+    //   collection = collection.filter(ee.Filter.eq('version',1))
+    // }
+    // if (param.version == 11){
+    //   collection = collection.filter(ee.Filter.eq('version',11))
+    // }
+    // if (param.version == 12){
+    //   collection = collection.filter(ee.Filter.eq('version',12))
+    // }
+}
+
+if (param.step == 'Gap'){
+    var collection = gap
+}
+
+if (param.step == 'Filtro_espacial'){
+    var collection = f_espacial
+}
+
+if (param.step == 'Remap'){
+    var collection = remap
+}
+
+var collection1 = collection.filter(ee.Filter.eq('year',param.year)).mosaic()
+
+var clasif_agua_total1 = collection1.gte(1).and(collection1.lte(3)).selfMask()
+
+var clasif_agua_frec1 = clasif_agua_total1.reduce(ee.Reducer.sum()).gte(param.frecuencia).selfMask()
+
+
+// Selección del producto a comparar
+
+if (param.producto == 'GSW'){
+  var collection2 = ee.ImageCollection('JRC/GSW1_4/YearlyHistory')
+                     .filter(ee.Filter.eq('year',param.year)).mosaic().eq(3).clip(pais)
+}
+
+if (param.producto == 'MB-Peru-C1'){
+  var collection2 = ee.Image('projects/mapbiomas-raisg/PRODUCTOS/PERU/COLECCION4/INTEGRACION/Integracion-PERU-1')
+  // collection2 = collection2.addBands(collection2.select('classification_2021').rename('classification_2022'))
+  //                         .addBands(collection2.select('classification_2021').rename('classification_2023'))
+  collection2 = collection2.select('classification_' + param.year).eq(33).selfMask()
+}
+
+if (param.producto == 'MB-Peru-C2'){
+  var collection2 = ee.Image('projects/mapbiomas-raisg/MAPBIOMAS-PERU/COLECCION2/INTEGRACION/mapbiomas_peru_collection2_integration_v1')
+  //collection2 = collection2.addBands(collection2.select('classification_2022').rename('classification_2023'))
+  collection2 = collection2.select('classification_' + param.year).eq(33).selfMask()
+}
+
+if (param.producto == 'MB-Peru-C3'){
+  var collection2 = ee.Image('projects/mapbiomas-raisg/MAPBIOMAS-PERU/COLECCION3/INTEGRACION/PERU-CLASES-GENERALES-1')
+  collection2 = collection2.select('classification_' + param.year).eq(33).selfMask()
+}
+
+var dif2 = clasif_agua_frec1.unmask(collection2).multiply(0)
+var dif2 = dif2.where(clasif_agua_frec1.and(collection2),2)
+var dif2 = dif2.where(dif2.neq(2).and(clasif_agua_frec1),1)
+var dif2 = dif2.where(dif2.neq(2).and(collection2),3).selfMask()
+
+
+// Mosaicos
+
+//var modules = require('users/rcamargo/projects-mapbiomas-water-c1:step-05-coleccion-1-1/Map001_module_month_water_2');
+var modules = require('users/jromualdoibc/testeos-mbagua:Map001_module_month_water_mosaicos');
+// var modules = require('users/rcamargo/projects-mapbiomas-water-c1:step-05-coleccion-1-1/Map001_module_month_water_2');
+var get_Collection = modules.get_Collection2;
+
+var Collection_all = get_Collection(pais.geometry().bounds(),70, [param.year]);
+
+var start1 = ee.Date.fromYMD(param.year, param.month, 1);
+var end1 = start1.advance(1, 'month');
+
+var start2 = ee.Date.fromYMD(param.year, 1, 1);
+var end2 = start2.advance(1, 'year');
+
+var img_LC2_month = Collection_all.filterDate(start1,end1);
+var img_LC2_year = Collection_all.filterDate(start2,end2);
+
+
+// Parametros Visualizacion
+
+var vis_image = {
+  opacity: 1,
+  bands: ['swir1', 'nir', 'red'],
+  gain: [0.08, 0.06, 0.2],
+  gamma: 0.65
+};
+
+
+// Add two maps to the screen.
+
+var left = ui.Map();
+var right = ui.Map();
+ui.root.clear();
+ui.root.add(left);
+ui.root.add(right);
+
+ui.Map.Linker([left, right], 'change-bounds');
+
+
+// Visualizacion
+
+if (param.pais){
+
+  //left.centerObject(pais, 5)
+  left.addLayer(pais.style({fillColor: '00000001'}),{}, 'Limite país', true)
+  left.addLayer(img_LC2_year.median(), {"bands":["swir1","nir","red"],"min":200,"max":4000}, 'mosaico anual LC2 '+param.year,false)
+  left.addLayer(clasif_agua_frec1, {palette: 'blue'}, 'agua total anual MB Agua -'+param.year, false)
+  left.addLayer(dif2,{"min":1,"max":3,"palette":['00ff00','0000ff','ff0000'] }, 'Diferencias frecuencia (>' + param.frecuencia +')-'+ param.year,true);
+    
+  //right.centerObject(pais, 5)
+  right.addLayer(pais.style({fillColor: '00000001'}),{}, 'Limite país', true)
+  right.addLayer(img_LC2_year.median(), {"bands":["swir1","nir","red"],"min":200,"max":4000}, 'mosaico anual LC2 '+param.year,false)
+  right.addLayer(collection2, {palette: '00FFFF'}, 'agua total anual-'+param.producto + '-' + param.year, false)
+  right.addLayer(dif2,{"min":1,"max":3,"palette":['00ff00','0000ff','ff0000'] }, 'Diferencias frecuencia (>' + param.frecuencia +')-'+ param.year,true);
+}
+
+if (param.mask_subregion){
+  
+  var subregion = RegionVec.filter(ee.Filter.inList('id_region',param.n_subregion))
+  //left.centerObject(subregion)
+  left.addLayer(subregion.style({fillColor: '00000001'}),{}, 'Subregion ' + param.n_subregion, true)
+  left.addLayer(img_LC2_year.median().clip(subregion), {"bands":["swir1","nir","red"],"min":200,"max":4000}, 'mosaico anual LC2 '+param.year,false)
+  left.addLayer(clasif_agua_frec1.clip(subregion), {palette: 'blue'}, 'agua total anual MB Agua - ' +param.year, false)
+  left.addLayer(dif2.clip(subregion),{"min":1,"max":3,"palette":['00ff00','0000ff','ff0000'] }, 'Diferencias frecuencia (>' + param.frecuencia +')-'+ param.year,true);
+    
+  //right.centerObject(subregion)
+  right.addLayer(subregion.style({fillColor: '00000001'}),{}, 'Subregion ' + param.n_subregion, true)
+  right.addLayer(img_LC2_year.median().clip(subregion), {"bands":["swir1","nir","red"],"min":200,"max":4000}, 'mosaico anual LC2 '+param.year,false)
+  right.addLayer(collection2.clip(subregion), {palette: '00FFFF'}, 'agua total anual-'+param.producto + '-' + param.year, false)
+  right.addLayer(dif2.clip(subregion),{"min":1,"max":3,"palette":['00ff00','0000ff','ff0000'] }, 'Diferencias frecuencia (>' + param.frecuencia +')-'+ param.year,true);
+}
+
+if (param.mask_bioma){
+  
+  var biomas = BiomasVec.filter(ee.Filter.inList('id_region',param.n_bioma))
+  //left.centerObject(biomas)
+  left.addLayer(biomas.style({fillColor: '00000001'}),{}, 'Bioma ' + param.n_bioma, true)
+  left.addLayer(img_LC2_year.median().clip(biomas), {"bands":["swir1","nir","red"],"min":200,"max":4000}, 'mosaico anual LC2 '+param.year,false)
+  left.addLayer(clasif_agua_frec1.clip(biomas), {palette: 'blue'}, 'agua total anual MB Agua - ' +param.year, false)
+  left.addLayer(dif2.clip(biomas),{"min":1,"max":3,"palette":['00ff00','0000ff','ff0000'] }, 'Diferencias frecuencia (>' + param.frecuencia +')-'+ param.year,true);
+  
+  //right.centerObject(biomas)
+  right.addLayer(biomas.style({fillColor: '00000001'}),{}, 'Bioma' + param.n_bioma, true)
+  right.addLayer(img_LC2_year.median().clip(biomas), {"bands":["swir1","nir","red"],"min":200,"max":4000}, 'mosaico anual LC2 '+param.year,false)
+  right.addLayer(collection2.clip(biomas), {palette: '00FFFF'}, 'agua total anual-'+param.producto + '-' + param.year, false)
+  right.addLayer(dif2.clip(biomas),{"min":1,"max":3,"palette":['00ff00','0000ff','ff0000'] }, 'Diferencias frecuencia (>' + param.frecuencia +')-'+ param.year,true);
+}
+
+
+/*  Leyenda
+*/
+  var legend = ui.Panel({
+  style: {
+    position: 'bottom-left',
+    padding: '8px 15px'
+  }
+  
+});
+ 
+var legendTitle = ui.Label({
+  value: 'Leyenda',
+  style: {
+    fontWeight: 'bold',
+    fontSize: '16px',
+    margin: '0 0 4px 0',
+    padding: '0'
+    }
+});
+ 
+legend.add(legendTitle);
+
+var makeRow = function(color, name) {
+       var colorBox = ui.Label({ 
+        style: {
+          backgroundColor: '#' + color,
+          padding: '8px',
+          margin: '0 0 4px 0'
+        }
+      });
+ 
+var description = ui.Label({
+        value: name,
+        style: {margin: '0 0 4px 6px'}
+      });
+      return ui.Panel({
+        widgets: [colorBox, description],
+        layout: ui.Panel.Layout.Flow('horizontal')
+      });
+};
+
+var vis_detec = ['00ff00','0000ff','ff0000']
+
+var months_label = [ 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciciembre'];
+
+var Elemento =[
+  [vis_detec[1],'Agua en ambos productos'],
+  [vis_detec[0],'Agua en MB Agua ( ' + param.step + ' ) y no en ' + param.producto],
+  [vis_detec[2],'Agua en ' + param.producto + ' y no en MB Agua (' + param.step + ')'],
+   ]
+  
+Elemento.forEach(function(ele){
+  legend.add(makeRow(ele[0], ele[1]))
+})
+left.add(legend);
+
+var tituloMapa1 = ui.Label({
+  value: param.step+' - '+param.year,
+  style: {position:'top-center',
+  fontWeight: 'bold',
+  fontSize: '24px'
+  }
+})
+
+left.add(tituloMapa1)
+
+var tituloMapa2 = ui.Label({
+  value: param.producto+' - '+param.year,
+  style: {position:'top-center',
+  fontWeight: 'bold',
+  fontSize: '24px'
+  }
+})
+
+right.add(tituloMapa2)

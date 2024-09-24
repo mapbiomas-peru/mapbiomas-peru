@@ -1,0 +1,77 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var geometry = 
+    /* color: #d63000 */
+    /* shown: false */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Geometry.Polygon(
+        [[[-84.44686473016917, 1.4596465012267017],
+          [-84.44686473016917, -19.177602105031585],
+          [-66.42928660516917, -19.177602105031585],
+          [-66.42928660516917, 1.4596465012267017]]], null, false);
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+var version_output = '1';
+var Id_region_class = 70201;
+var peru_C2 = ee.Image('projects/mapbiomas-raisg/MAPBIOMAS-PERU/COLECCION2/INTEGRACION/mapbiomas_peru_collection2_integration_v1');
+var region_class = ee.Image("projects/mapbiomas-raisg/MAPBIOMAS-PERU/DATOS-AUXILIARES/RASTER/per-regiones-clasificacion-mbperu-3").eq(Id_region_class);
+
+peru_C2 = peru_C2.addBands(peru_C2.select('classification_2022').rename('classification_2023')).updateMask(region_class);
+print(peru_C2);
+var palette = require('users/mapbiomas/modules:Palettes.js').get('classification8');
+var referenceVis = {min: 0, max: 62, palette: palette};
+var country = ee.Image("projects/mapbiomas-raisg/PERU/DATOS_AUXILIARES/ESTADISTICAS/COLECCION1/nivel-politico-2-raster");
+
+var yearsPreview =  [2020, 2021, 2022, 2023]
+var years = [
+    1985, 1986, 1987, 1988,
+    1989, 1990, 1991, 1992,
+    1993, 1994, 1995, 1996,
+    1997, 1998, 1999, 2000,
+    2001, 2002, 2003, 2004,
+    2005, 2006, 2007, 2008,
+    2009, 2010, 2011, 2012,
+    2013, 2014, 2015, 2016,
+    2017, 2018, 2019, 2020,
+    2021, 2022, 2023
+];
+
+//Se crea una imagen vacia y se añaden las bandas 
+var image = ee.Image([]);
+
+years.forEach(function(year){
+  
+  var clase_interes = peru_C2.select('classification_' + year).eq(6).multiply(6).updateMask(country).selfMask();
+  
+  clase_interes = clase_interes.set('version', version_output).set('year', year);
+
+
+  image = image.addBands(clase_interes.rename('classification_' + year));
+});
+
+print(image, 'Flooded Clasification')
+
+yearsPreview.forEach(function(year){
+  
+  var imageViz = image.select('classification_'+year)
+  
+  Map.addLayer(imageViz,referenceVis,'clase_interes_'+year,false)
+  // Map.addLayer(clase11_year,referenceVis,'clase11_year'+year,false)
+});
+
+// Exportacion
+var imageName = 'FLOODABLE-PERU-' + Id_region_class + '-' + version_output;
+
+Export.image.toAsset({
+    image: image.toByte(),
+    description: imageName,
+    assetId: 'projects/mapbiomas-raisg/MAPBIOMAS-PERU/COLECCION3/TRANSVERSALES/INUNDABLES/clasificacion-ft/' + imageName,
+    pyramidingPolicy: {
+        '.default': 'mode'
+    },
+    region: region_class.geometry(),
+    scale: 30,
+    maxPixels: 1e13
+});

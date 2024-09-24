@@ -1,0 +1,76 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var geometry = 
+    /* color: #d63000 */
+    /* shown: false */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Geometry.Polygon(
+        [[[-72.6682745209142, -12.363051873294209],
+          [-72.6682745209142, -13.386523123575337],
+          [-69.61613523868763, -13.386523123575337],
+          [-69.61613523868763, -12.363051873294209]]], null, false);
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+// HOW TO USE
+// 1. Choose the year (line 11)
+// 3. Set the geometry at "geometry" button on the upleft side of the map
+// 4. RUN the script
+// 5. Run the task of export on the upright panel
+//
+// Obs: If you define a big geometry, maybe your data get splitted
+// on Google Drive. You will need to make a local mosaic using ArcGis, QGis, ENVI...
+
+// Define the year of your interest
+var year = 2023;
+
+// Output file name
+var fileName = 'mosaic-' + String(year);
+
+// Get the moisac
+var mosaicPE = ee.ImageCollection("projects/nexgenmap/MapBiomas2/LANDSAT/PANAMAZON/mosaics-2")
+                     .merge(ee.ImageCollection("projects/mapbiomas-raisg/MOSAICOS/mosaics-2"))
+                    .filterMetadata('year', 'equals', year)
+                    .filter(ee.Filter.eq('country', 'PERU'))
+                    .select(["blue_median","green_median", "red_median", "nir_median", "swir1_median", "swir2_median"])
+                    
+var regionesMOS = ee.Image("projects/mapbiomas-raisg/MAPBIOMAS-PERU/DATOS-AUXILIARES/RASTER/mb-peru-regiones-mosaico-2");
+
+mosaicPE = mosaicPE
+                        .map(
+                            function (image) {
+                                return image.updateMask(
+                                    regionesMOS.eq(ee.Number.parse(image.get('region_code')).toInt16()));
+                            }
+                        );
+
+
+var mosaic  = mosaicPE.mosaic()
+
+// Shows the mosaic on map
+Map.addLayer(mosaic, 
+    {
+        bands: 'swir1_median,nir_median,red_median',
+        gain: '0.08,0.06,0.2',
+        gamma: 0.75
+    },
+    
+    'mapbiomas mosaic PE'
+);
+
+// Map.centerObject(geometry);
+
+// Exports the data to MAPBIOMAS-EXPORT folder in your Google Drive
+Export.image.toDrive(
+      {
+        'image': mosaic.select(['swir1_median','nir_median','red_median']).int32(), 
+        'description': fileName, 
+        'folder': 'MAPBIOMAS-EXPORT'+year, 
+        'fileNamePrefix': fileName,
+        'region': geometry, 
+        'scale': 30, 
+        'maxPixels': 1e13,
+        'fileFormat': 'GeoTIFF'
+      }
+);

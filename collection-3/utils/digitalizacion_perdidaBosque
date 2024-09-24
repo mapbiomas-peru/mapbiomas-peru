@@ -1,0 +1,176 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var INCLUSION = /* color: #ff1414 */ee.Geometry.MultiPolygon(
+        [[[[-75.00849777214678, -8.096343116340808],
+           [-75.004034576346, -8.098722414460145],
+           [-74.99030166618975, -8.094643609078455],
+           [-74.99339157097491, -8.089884950605525],
+           [-75.00987106316241, -8.091244573045984]]],
+         [[[-70.07809308666175, -12.940407134930481],
+           [-70.08152631420081, -12.955798423489414],
+           [-70.058867012443, -12.952452572065503],
+           [-70.06504682201331, -12.939068717098113]]],
+         [[[-74.65023321916978, -7.1469698503855925],
+           [-74.65366644670884, -7.165194541532146],
+           [-74.63838858416001, -7.178990318529829],
+           [-74.62551398088853, -7.191593502191454],
+           [-74.61555762102525, -7.196362183201821],
+           [-74.61332602312486, -7.200279276544198],
+           [-74.61126608660142, -7.2084539710428475],
+           [-74.61813254167954, -7.211008532829573],
+           [-74.61349768450181, -7.223270228721868],
+           [-74.61504263689439, -7.235701886409477],
+           [-74.60202216634887, -7.258835733872338],
+           [-74.59704398641723, -7.257473447067278],
+           [-74.58571433553833, -7.261219725853472],
+           [-74.5762729598059, -7.259687161030506],
+           [-74.57455634603637, -7.252875698651482],
+           [-74.57266807088989, -7.245553261655053],
+           [-74.5817661238684, -7.23533570889878],
+           [-74.58022117147583, -7.222393143359539],
+           [-74.58262443075317, -7.185947615209428],
+           [-74.59326743612426, -7.168405033019797],
+           [-74.60957526693481, -7.163125094399272],
+           [-74.60614203939575, -7.153416660607578],
+           [-74.60133552084106, -7.139960770706217],
+           [-74.61712836752075, -7.14983981715157],
+           [-74.62004661092895, -7.144219006562455],
+           [-74.61712836752075, -7.130422178565198],
+           [-74.6257114363684, -7.13774647239245],
+           [-74.64047431478637, -7.13485083535155],
+           [-74.65970038900512, -7.141153080743017]]],
+         [[[-74.60734366903442, -7.256111156137332],
+           [-74.61026191244262, -7.258835733872338],
+           [-74.60974692831176, -7.261049441131045],
+           [-74.60545539388794, -7.259006019432904]]]]);
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+// set country name
+var countryName = 'Perú';
+
+// set year for the mosaic and classification
+var year = 2024
+
+// list of assets
+var assetDef = 'users/sad/project/raisg/deforestation-col4-2/deforestation-peru-col4-1-ft';
+var assetMos = 'projects/mapbiomas-raisg/MOSAICOS/mosaics-2';
+var assetCla = 'projects/mapbiomas-raisg/public/collection4/mapbiomas_raisg_panamazonia_collection4_integration_v1';
+var assetCountry = 'users/sad/project/raisg/database/country';
+var palette = require('users/mapbiomas/modules:Palettes.js');
+
+// Mosaic
+var assetRegionMosaicRaster = 'projects/mapbiomas-raisg/DATOS_AUXILIARES/RASTERS/clasificacion-mosaicos-4';
+
+var regionMosaicRaster  = ee.Image(assetRegionMosaicRaster).rename(['regions'])
+
+var getMosaic = function(paths, regionRaster) {
+  
+      // Get
+      regionRaster = regionRaster.where(regionRaster.eq(211),210)
+      regionRaster = regionRaster.where(regionRaster.eq(205),210)
+      var Mosaic_coll = ee.ImageCollection(paths)
+                        .filterMetadata('country', 'equals', countryName.replace('ú','u').toUpperCase())
+                        .select(["swir1_median","nir_median","red_median"])
+                        .map(
+                            function (image) {
+                                return image.updateMask(
+                                    regionRaster.eq(ee.Number.parse(image.get('region_code')).toInt16()));
+                            }
+                        );
+
+      // Aditional Bands
+      var joinedMosaics = Mosaic_coll;
+
+      // Select variables
+      return joinedMosaics;
+  };
+
+// country
+var country = ee.FeatureCollection(assetCountry)
+    .filter(ee.Filter.eq('pais', countryName));
+
+// mosaic
+var mosaicsRAISG = getMosaic(assetMos, regionMosaicRaster);
+var mosaicYear = mosaicsRAISG
+    .filter(ee.Filter.eq('year', year))
+    .mosaic()
+    .clip(country)
+    .selfMask();
+
+Map.addLayer(mosaicYear, {"bands": ["swir1_median","nir_median","red_median"],
+                       "gain": '0.08,0.06,0.2',
+                       "gamma": 0.75},
+                       'mosaic ' + year, true);
+                       
+                       
+                       
+                       
+//------MASCARA 2023, FILTRO BOSQUE DEL MAPA GENERAL                       
+
+
+var nonforest2000 = ee.Image('projects/mapbiomas-raisg/MAPBIOMAS-PERU/DATOS-AUXILIARES/RASTER/PNCB_Bosque_No_Bosque_2022')
+                  .eq(2).selfMask();
+Map.addLayer(nonforest2000,{palette:['7c3041']},'non forest 2000 PNCB',false);
+
+var loss2022 = ee.Image('projects/mapbiomas-raisg/MAPBIOMAS-PERU/DATOS-AUXILIARES/RASTER/PNCB_Bosque_No_Bosque_2022_filtrado')
+              .eq(3).selfMask();
+Map.addLayer(loss2022,{palette:['701b11']},'forest loss 2001-2022 PNCB',false);
+
+
+// var forest2022 = ee.Image('projects/mapbiomas-raisg/MAPBIOMAS-PERU/DATOS-AUXILIARES/RASTER/PNCB_Bosque_No_Bosque_2022')
+//                 .eq(5).selfMask();
+// Map.addLayer(forest2022,{palette:['2a7829']},'forest 2022 PNCB',false);
+
+// var loss2023 = ee.Image('projects/mapbiomas-raisg/MAPBIOMAS-PERU/DATOS-AUXILIARES/RASTER/PNCB_ATD_2023_R')
+//               .neq(0).selfMask();
+// Map.addLayer(loss2023,{palette:['ff5129']},'ATD 2023 PNCB',true);
+
+
+
+//-----MASCARA 2024, FILTRO BOSQUE DEL MAPA GENERAL-------
+
+var Uso2023 = ee.Image('projects/mapbiomas-peru/assets/LAND-COVER/COLLECTION3/AGRICULTURE/PERU-INTERVENCION-ROI-702-2');  
+Map.addLayer(Uso2023,{palette:['470a37']},'Uso2023_702',true)
+
+var Uso2023_1 = ee.Image('projects/mapbiomas-peru/assets/LAND-COVER/COLLECTION3/AGRICULTURE/PERU-INTERVENCION-ROI-701-2');  
+Map.addLayer(Uso2023_1,{palette:['470a37']},'Uso2023_701',true)
+
+
+
+// set dark style
+var mapp = require('users/joaovsiqueira1/packages:Mapp.js');
+
+Map.setOptions({
+    'styles': {
+        'Dark': mapp.getStyle('Dark')
+    }
+});
+
+// BUSCAR PUNTO
+
+// Map.centerObject(country);
+
+// var punto = ee.Geometry.Point([-71.82771, -3.8013]);
+// Map.addLayer(punto)
+// Map.centerObject(punto)
+
+
+// //EXPORTAR GEOMETRIAS
+
+// // geometries
+// var GeometriesIE = ee.FeatureCollection(INCLUSION)
+// print(GeometriesIE.size()) 
+
+// // export to asset
+
+// var operador = 'zonaPedro'
+// var fileName = 'polygons-' + countryName  + '-'+ operador
+// var assetIdG = 'projects/mapbiomas-raisg/MAPBIOMAS-PERU/COLECCION3/MUESTRAS/PERDIDA-BOSQUE-2024/' + fileName;
+// Export.table.toAsset(GeometriesIE, fileName, assetIdG)
+
+
+// AGREGAR POLIGONOS DIBUJADOS COMO ASSETS
+
+// var poligonos = ee.FeatureCollection('projects/mapbiomas-raisg/MAPBIOMAS-PERU/COLECCION3/MUESTRAS/PERDIDA-BOSQUE-2024/polygons-Peru-zonaPedro')
+// Map.addLayer(poligonos.style({
+//   color: '000000',
+//   fillColor: 'b32b1b'
+// }),{},'poligonos', true)
