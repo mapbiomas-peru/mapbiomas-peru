@@ -30,7 +30,7 @@
 * [Mapbiomas integration toolkit](https://mapbiomas-peru.github.io/note-mb-pe-web/)
 
 ### Cloud migration
-* [Guidelines for cloud migration] 
+* [Guidelines for cloud migration](https://github.com/vllactayo/mb-cloud-migration)
 <!--
 **raisgmb/raisgmb** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
 
