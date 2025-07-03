@@ -1,0 +1,274 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var geometry = 
+    /* color: #d63000 */
+    /* shown: false */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Geometry.Polygon(
+        [[[-81.7940611909593, 0.24749227025852882],
+          [-81.7940611909593, -18.619934071959978],
+          [-68.5225768159593, -18.619934071959978],
+          [-68.5225768159593, 0.24749227025852882]]], null, false);
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+/** 
+ *  Preintegracion Tema Transversal Playas 
+ * by: EYTC
+ */
+ 
+var param = {
+    Tema: 'WATER',
+    ID_pais: 8,
+    pais: 'PERU', //
+    years: [2023],  // Lista de años Solo para visualizacion
+    version_output:'1',
+    source: 'Instituto del Bien Común (IBC)',
+    id_class: 33
+     }; 
+     
+/*
+    PERU : 8
+    GUIANA_FRANCESA: 9
+    VENEZUELA : 1
+    GUYANA : 2
+    COLOMBIA: 3
+    BRASIL: 4
+    ECUADOR: 5
+    SURINAME: 6
+    BOLIVIA: 7
+*/
+
+// CODIGO DE REGION Y VERSION A INTEGRAR
+var codesAndVersions = [
+
+  // PERÚ
+    //Amazonia
+      [70101,	14],
+      [70102,	14],
+      [70103,	14],
+      [70104,	14],
+      [70105,	24],
+      [70106,	24],
+      [70107,	14],
+      [70108,	14],
+      [70109,	14],
+      [70110,	14],
+      [70111,	14],
+      [70112,	14],
+      [70113,	14],
+      [70114,	14],
+      [70115,	14], 
+      [70201,	14],
+      [70202,	14],
+      [70203,	14],
+      [70204,	14],
+      [70205,	14],
+      [70206,	14],
+      [70207,	14],
+      [70208,	14],
+      [70209,	14],
+      [70210,	14],
+      [70211,	14],    
+      [70212,	14],
+//     //Andes PACIFICO
+//      [70401,	22],
+//      [70402,	22],
+//      [70403,	22],
+//      [70404,	22],
+//      [70405,	22],
+//      [70406,	22],
+//      [70407,	22],
+//      [70408,	22],
+//      //Andes RAISG
+        [70301,	23],
+        [70302,	33],
+        [70303,	23],
+        [70304,	23],
+        [70305,	23],
+        [70306,	23],
+        [70307,	23],
+        [70308,	23],
+        [70309,	23],
+        [70310,	13],
+        [70311,	13],
+        [70312,	13],
+        [70313,	12],
+];
+        
+// Assets
+//---------------------------------
+var palettes = require('users/mapbiomas/modules:Palettes.js');
+var dirinput = 'projects/mapbiomas-raisg/MAPBIOMAS-PERU/COLECCION3/clasificacion-ft'
+var dirout =   'projects/mapbiomas-raisg/MAPBIOMAS-PERU/COLECCION3/INTEGRACION'
+var assetCountries = 'projects/mapbiomas-raisg/MAPBIOMAS-PERU/DATOS-AUXILIARES/ESTADISTICAS/COLECCION2/nivel-politico-1';
+var assetCountriesRaster = "projects/mapbiomas-raisg/MAPBIOMAS-PERU/DATOS-AUXILIARES/ESTADISTICAS/COLECCION2/nivel-politico-1-raster";
+var regionesclass = 'projects/mapbiomas-raisg/MAPBIOMAS-PERU/DATOS-AUXILIARES/VECTORES/per-regiones-clasificacion-mbperu-3';
+var regionesclass = ee.FeatureCollection(regionesclass);
+//---------------------------------
+
+// Get the mosaic
+  var mosaics = ee.ImageCollection("projects/nexgenmap/MapBiomas2/LANDSAT/PANAMAZON/mosaics-2")
+                       .merge(ee.ImageCollection("projects/mapbiomas-raisg/MOSAICOS/mosaics-2"))
+                      .filter(ee.Filter.eq('country', 'PERU'))
+                      .select(["blue_median","green_median", "red_median", "nir_median", "swir1_median", "swir2_median"])
+  
+  var regionesMOS = ee.Image("projects/mapbiomas-raisg/MAPBIOMAS-PERU/DATOS-AUXILIARES/RASTER/mb-peru-regiones-mosaico-2");
+  
+  var mosaics_integrado = mosaics
+                          .map(
+                              function (image) {
+                                  return image.updateMask(
+                                      regionesMOS.eq(ee.Number.parse(image.get('region_code')).toInt16()));
+                              }
+                          );
+
+// Get Clasification for integration
+  var collection = ee.ImageCollection(dirinput);
+
+  print(collection)
+
+// convert vector to raster
+var regionsRaster = ee.Image().uint32().paint({
+                    featureCollection: regionesclass,
+                    color: 'id_regionC'
+                    }).rename(['regions']);
+
+// var regionsRaster = ee.Image(regionesclassRaster)
+var regionMosaicRaster = ee.Image().uint32().paint({
+                    featureCollection: regionesclass,
+                    color: 'id_region'
+                    }).rename(['regions']);
+                    
+
+var country = ee.FeatureCollection(assetCountries)
+                // .filterMetadata('name', 'equals', integracion_v0_Id(param.pais));
+
+Map.addLayer(country, {}, 'country', false)   
+
+var countryraster = ee.Image(assetCountriesRaster).selfMask()
+
+
+
+//
+// Integrate
+//
+
+var collectionsByRegion = codesAndVersions
+    .map(
+        function (codeAndVersion) {
+            var images = collection
+                .filterMetadata('code_region', 'equals', codeAndVersion[0])
+                .filterMetadata('version', 'equals', codeAndVersion[1])
+                .map(
+                    function (image) {
+                        return image.mask(regionsRaster.eq(codeAndVersion[0]));
+                    }
+                );
+            //print(codeAndVersion[0], codeAndVersion[1])
+            return images.mosaic().byte();
+        }
+    );
+
+var allRegionsClassification = ee.ImageCollection.fromImages(ee.List(collectionsByRegion));
+var integracion_v0 = allRegionsClassification.mosaic()
+
+var bandnamelist = integracion_v0.bandNames().getInfo();                            
+print(bandnamelist) 
+
+var integracion_v0_Id = ee.Image()
+bandnamelist.forEach(function(bandname){
+       var integracion_year = ee.Image(27).where(integracion_v0.select(bandname).eq(param.id_class), param.id_class)
+       integracion_v0_Id = integracion_v0_Id.addBands(integracion_year.rename(bandname))
+  })
+
+integracion_v0_Id = integracion_v0_Id.select(bandnamelist).toInt8().updateMask(countryraster)
+
+// Layer add
+
+for (var yearI=0;yearI<param.years.length;yearI++) {
+var vis = {
+    'bands': 'classification_'+param.years[yearI],
+    'min': 0,
+    'max': 34,
+    'palette': palettes.get('classification2')
+};
+
+Map.addLayer(mosaics_integrado.filterMetadata('year', 'equals', param.years[yearI]),{
+  "bands":["swir1_median","nir_median","red_median"],
+  "min":407,"max":3381}, 'Mosaic' + param.years[yearI],false)
+Map.addLayer(integracion_v0, vis, 'classification_'+param.years[yearI],false);
+Map.addLayer(integracion_v0_Id, vis, 'classification_export'+param.years[yearI],false);
+}
+
+var acum = integracion_v0_Id.eq(param.id_class).reduce('sum').selfMask()
+Map.addLayer(acum, {"bands":["sum"],"min":1,"max":39,"palette":["ff0000","ff9206","f9ff04"]}, 'classification_acum' + param.id_class,false);
+
+var prefixo_out = param.pais + '-' + param.Tema + '-' + param.version_output
+var integracionUrban = integracion_v0_Id
+                        .set('country', param.pais)
+                        .set('theme', param.Tema)
+                        .set('version', param.version_output)
+                        .set('collection', '3.0')
+                        .set('source', param.source);
+  print(integracionUrban);
+  
+  Export.image.toAsset({
+      'image':integracionUrban,
+      'description': prefixo_out,
+      'assetId': dirout+'/' +prefixo_out,
+      'pyramidingPolicy': {
+          '.default': 'mode'
+      },
+      'region': geometry, //country.geometry().bounds(),
+      'scale': 30,
+      'maxPixels': 1e13
+  });
+
+
+
+
+// integracion_v0_Id = integracion_v0_Id
+//         //.set('ID_pais', param.ID_pais)
+//         //.set('pais', param.pais)
+//         .set('tema', param.Tema)
+//         .set('version', param.version_output)
+//         .set('descripcion', 'integracion v0');
+        
+// print(integracion_v0_Id)  
+
+
+//PAIS-AÑO-VERSIÓN
+// - country (string) [para mapa general y para temas transversales] Ej: BOLIVIA
+// - theme (string) [solo para temas transversales] Ej: WATER
+// - year (number - integer) Ej: 2010
+// - version (string) - use números en formato de string. Debe ser la misma versión que está en el nombre del asset Ej: 1
+// - collection (number - float). Ejemplo: 3.0
+// - source (string) - Ejemplo: imazon, solved, Instituto del Bien Común (IBC), Fundacion Ecociencia...
+
+// for(var year=1985; year<=2020;year++){
+//   var prefixo_out = param.pais + '-' + year + '-' + param.version_output
+//   var integracionyear = integracion_v0_Id.select('classification_'+year)
+//                           .rename('classification')
+//                           .set('country', param.pais)
+//                           .set('theme', 'URBAN')
+//                           .set('year', year)
+//                           .set('version', param.version_output)
+//                           .set('collection', '3.0')
+//                           .set('source', param.source);
+//     print(year, integracionyear);
+    
+//     Export.image.toAsset({
+//         'image':integracionyear,
+//         'description': prefixo_out,
+//         'assetId': dirout+'/' +prefixo_out,
+//         'pyramidingPolicy': {
+//             '.default': 'mode'
+//         },
+//         'region': country.geometry().bounds(),
+//         'scale': 30,
+//         'maxPixels': 1e13
+//     });
+// }
+

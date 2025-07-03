@@ -1,0 +1,169 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var imageVisParam = {"opacity":1,"bands":["constant"],"palette":["b982ff"]};
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+/*Este script crea un raster con el acumulado total de una clase especifica (38 años), 
+genera un buffer y filtra por región de clasificación*/
+
+// Parámetros de configuración
+var claseInteres = 34; // Clase de interés
+
+// Lista de códigos de mosaicos de interés
+var id_regions = [703, 704]; 
+
+// Assets
+var assetId = 'projects/mapbiomas-raisg/MAPBIOMAS-PERU/COLECCION2/INTEGRACION/mapbiomas_peru_collection2_integration_v1';
+var assetregionMosaic = 'projects/mapbiomas-raisg/DATOS_AUXILIARES/VECTORES/clasificacion-mosaicos-4';
+var mosaicVectors = ee.FeatureCollection(assetregionMosaic);
+
+// Coleccion  2
+var imagenMapbiomas = ee.Image(assetId);
+
+// Llamando a las bandas (años)
+var bandas = imagenMapbiomas.bandNames();
+
+// Inicializar un raster acumulativo
+var rasterAcumulado = ee.Image(0);
+
+// Procesar cada banda
+bandas.getInfo().forEach(function(banda) {
+  var imagenBanda = imagenMapbiomas.select(banda);
+  var mascaraClase = imagenBanda.eq(claseInteres);
+  rasterAcumulado = rasterAcumulado.add(mascaraClase);
+  // Reclasificación de rasterAcumulado a rasterAcumuladoTotal
+});
+
+// Aplicar una máscara para hacer transparentes los valores de 0
+rasterAcumulado = rasterAcumulado.updateMask(rasterAcumulado.gt(0));
+
+// Paleta de colores del amarillo al azul
+var paletaGradual = [
+  'ffff00', 'ffdd00', 'ffbb00', 'ff9900', 'ff7700', 'ff5500', 
+  'ff3300', 'ff1100', 'ff0000', 'dd0000', 'bb0000', '990000', 
+  '770000', '550000', '330000', '110000', '0000ff'
+];
+
+// Parámetros de visualización
+var parametrosVisualizacion = {min: 0, max: 38, palette: paletaGradual};
+
+//crear un raster binario, sin información de los años
+var rasterAcumuladoTotal = rasterAcumulado.gt(0);
+rasterAcumuladoTotal = rasterAcumuladoTotal.updateMask(rasterAcumuladoTotal);
+
+
+// Crear el acumulado por region de mosaico
+id_regions.forEach(function(id_region) {
+  // Filtrar segun las regiones de mosaico 
+  var selectedMosaic = mosaicVectors.filter(ee.Filter.eq('id_region', id_region));
+
+  // Convertir la region de mosaico seleccionado en una máscara
+  var mosaicMask = ee.Image().paint(selectedMosaic, 1).selfMask();
+
+  // Aplicar la máscara al raster acumulado
+  var integratedMasked = rasterAcumuladoTotal.updateMask(mosaicMask);
+
+  // Visualizar
+  Map.addLayer(integratedMasked, parametrosVisualizacion, 'Acumulado Clase-C'+ claseInteres+'-' + id_region, false);
+
+  //Exportar a drive los rasters por region
+  Export.image.toDrive({
+    image: integratedMasked,
+    description: 'acumulado-ID'+ claseInteres +'-' + id_region,
+    scale: 30,
+    region: selectedMosaic.geometry().bounds(),
+    maxPixels: 1e13,
+    folder: 'CoberturaPeru2.0_Acumulados'
+    
+  });
+});
+
+Map.addLayer(rasterAcumuladoTotal,{} ,'Raster Acumulado Nacional - ID'+claseInteres, false)
+Map.addLayer(rasterAcumulado,parametrosVisualizacion ,'acumulado por año', false)
+
+//Exportar el acumulado nacional como Asset
+Export.image.toAsset({
+  image: rasterAcumuladoTotal,
+  description: 'acumulado-ID'+ claseInteres,
+  scale: 30,
+  maxPixels: 1e13,
+  assetId: 'projects/mapbiomas-raisg/MAPBIOMAS-PERU/DATOS-AUXILIARES/RASTER/ACUMULADO/'+'acumulado-ID'+ claseInteres
+});/*Este script crea un raster con el acumulado total de una clase especifica (38 años), 
+genera un buffer y filtra por región de clasificación*/
+
+// Parámetros de configuración
+var claseInteres = 32; // Clase de interés
+
+// Lista de códigos de mosaicos de interés
+var id_regions = [701, 702, 703, 704, 705]; 
+
+// Assets
+var assetId = 'projects/mapbiomas-raisg/MAPBIOMAS-PERU/COLECCION2/INTEGRACION/mapbiomas_peru_collection2_integration_v1';
+var assetregionMosaic = 'projects/mapbiomas-raisg/DATOS_AUXILIARES/VECTORES/clasificacion-mosaicos-4';
+var mosaicVectors = ee.FeatureCollection(assetregionMosaic);
+
+// Coleccion  2
+var imagenMapbiomas = ee.Image(assetId);
+
+// Llamando a las bandas (años)
+var bandas = imagenMapbiomas.bandNames();
+
+// Inicializar un raster acumulativo
+var rasterAcumulado = ee.Image(0);
+
+// Procesar cada año y agregandolo al raster acumulado
+bandas.getInfo().forEach(function(banda) {
+  var imagenBanda = imagenMapbiomas.select(banda);
+  var mascaraClase = imagenBanda.eq(claseInteres);
+  rasterAcumulado = rasterAcumulado.add(mascaraClase);
+});
+
+// Paleta de colores del amarillo al azul
+var paletaGradual = [
+  'ffff00', 'ffdd00', 'ffbb00', 'ff9900', 'ff7700', 'ff5500', 
+  'ff3300', 'ff1100', 'ff0000', 'dd0000', 'bb0000', '990000', 
+  '770000', '550000', '330000', '110000', '0000ff'
+];
+
+// Parámetros de visualización
+var parametrosVisualizacion = {min: 1, max: 38, palette: paletaGradual};
+
+//crear un raster binario, sin información de los años
+var rasterAcumuladoTotal = rasterAcumulado.gt(0);
+rasterAcumuladoTotal = rasterAcumuladoTotal.updateMask(rasterAcumuladoTotal);
+
+// Crear el acumulado por region de mosaico
+id_regions.forEach(function(id_region) {
+  // Filtrar segun las regiones de mosaico 
+  var selectedMosaic = mosaicVectors.filter(ee.Filter.eq('id_region', id_region));
+
+  // Convertir la region de mosaico seleccionado en una máscara
+  var mosaicMask = ee.Image().paint(selectedMosaic, 1).selfMask();
+
+  // Aplicar la máscara al raster acumulado
+  var integratedMasked = rasterAcumuladoTotal.updateMask(mosaicMask);
+
+  // Visualizar
+  Map.addLayer(integratedMasked, parametrosVisualizacion, 'Acumulado Clase-C'+ claseInteres+'-' + id_region, false);
+
+  //Exportar a drive los rasters por region
+  Export.image.toDrive({
+    image: integratedMasked,
+    description: 'acumulado-ID'+ claseInteres +'-' + id_region,
+    scale: 30,
+    region: selectedMosaic.geometry().bounds(),
+    maxPixels: 1e13,
+    folder: 'CoberturaPeru2.0_Acumulados'
+    
+  });
+});
+
+Map.addLayer(rasterAcumuladoTotal,{} ,'Raster Acumulado Nacional - ID'+claseInteres, false)
+Map.addLayer(rasterAcumulado,parametrosVisualizacion ,'acumulado por año', false)
+
+//Exportar el acumulado nacional como Asset
+Export.image.toAsset({
+  image: rasterAcumuladoTotal,
+  description: 'acumulado-ID'+ claseInteres,
+  scale: 30,
+  maxPixels: 1e13,
+  assetId: 'projects/mapbiomas-raisg/MAPBIOMAS-PERU/DATOS-AUXILIARES/RASTER/ACUMULADO/'+'acumulado-C'+ claseInteres
+});

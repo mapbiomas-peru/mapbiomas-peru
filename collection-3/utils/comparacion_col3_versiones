@@ -1,0 +1,77 @@
+
+// AZUL solo en la col 3.3
+// ROJO solo en la col 3.2
+// GRIS ambas colecciones 2 
+
+// lista de años
+var years = [2021];
+// Lista de clases para el analisis 
+var classes = [3,15,18,9,21,23,24,30,25,33];
+
+var Palettes = require('users/mapbiomas/modules:Palettes.js');
+var palette = Palettes.get('classification8');
+var vis = {
+          'min': 0,
+          'max': 62,
+          'palette': palette,
+          'format': 'png'
+      };
+
+print(vis)
+
+var class_col32 = ee.Image('projects/mapbiomas-raisg/MAPBIOMAS-PERU/COLECCION3/INTEGRACION/integracion-pais/PERU-AMAZONIA6-2')
+
+var class_col33 = ee.Image('projects/mapbiomas-raisg/MAPBIOMAS-PERU/COLECCION3/INTEGRACION/integracion-pais/PERU-AMAZONIA6-3')
+    
+
+          
+
+
+
+
+years.forEach(function(year_j) {
+// para cada classe 
+  // para cada ano
+  var col33_j = class_col33.select('classification_'+year_j);
+  var col32_j = class_col32.select('classification_'+year_j);
+  classes.forEach(function(class_i) {
+    var images = ee.Image([]);
+
+    // selecionar a classificação do ano j
+    
+    // calcular concordância
+    var conc = ee.Image(0).where(col33_j.eq(class_i).and(col32_j.eq(class_i)), 1)   // [1]: Concordância
+                          .where(col33_j.eq(class_i).and(col32_j.neq(class_i)), 2)  // [2]: Apenas Sentinel
+                          .where(col33_j.neq(class_i).and(col32_j.eq(class_i)), 3)  // [3]: Apenas Landsat
+                          //.updateMask(biomes.eq(4));
+    
+    conc = conc.updateMask(conc.neq(0)).rename('territory_' + year_j);
+    
+    // build sinthetic image to compute areas
+    var synt = ee.Image(0).where(conc.eq(1), col33_j)
+                          .where(conc.eq(2), col32_j)
+                          .where(conc.eq(3), col33_j)
+                          .updateMask(conc)
+                          .rename(['classification_' + year_j]);
+    // build database
+    images = images.addBands(conc).addBands(synt);
+    
+      Map.addLayer(images.select(['territory_' + year_j]), {palette: [
+        'gray', 'blue', 'red'], min:1, max:3}, year_j + ' Agreement - Class ' + class_i, false);
+
+  });
+Map.addLayer(col32_j, vis, 'Col 3.2 '+year_j, false)
+Map.addLayer(col33_j, vis, 'Col 3.3   '+year_j, false)
+  
+});
+
+
+
+var blank = ee.Image(0).mask(0);
+var dirs = require('users/mapbiomasperu/mapbiomas-lulc:collection-3/modules/CollectionDirectories.js');
+var paths = dirs.listpaths('PERU');
+
+var assetregionVectors= paths.regionVector
+var RegionVector = ee.FeatureCollection(assetregionVectors)
+
+Map.addLayer(RegionVector.style({fillColor: '#4d4e4f22',color:'black', width: 1}), {}, 'RegionVector', false)

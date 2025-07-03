@@ -1,0 +1,351 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var geometry = 
+    /* color: #d63000 */
+    /* shown: false */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Geometry.Polygon(
+        [[[-80.50010761403654, 10.8664722813707],
+          [-80.50010761403654, -21.09399388337802],
+          [-42.61924823903654, -21.09399388337802],
+          [-42.61924823903654, 10.8664722813707]]], null, false),
+    remap_33_3 = /* color: #0b4a8b */ee.FeatureCollection(
+        [ee.Feature(
+            ee.Geometry.Polygon(
+                [[[-60.76414083972336, 5.2844706920069395],
+                  [-60.76036428943039, 5.263958541139961],
+                  [-60.77512716784836, 5.231137693521396],
+                  [-60.73942160144211, 5.197289391597983],
+                  [-60.669383759645235, 5.2082304563825925],
+                  [-60.57222342028977, 5.191818787914825],
+                  [-60.54990744128586, 5.241052506522218],
+                  [-60.615482087281954, 5.275582176535786],
+                  [-60.63161825671555, 5.287547456119616],
+                  [-60.686651550422695, 5.269086642389226]]]),
+            {
+              "class_original": 33,
+              "class_final": 3,
+              "system:index": "0"
+            })]);
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+
+/**
+ * 
+ */
+// set up output file path and name
+var outputAsset = 'projects/mapbiomas-raisg/COLECCION6/INTEGRACION';
+var outputVersion = '0-1';
+
+var years = [
+    1985, 1986, 1987,
+    1988, 1989, 1990,
+    1991, 1992, 1993,
+    1994, 1995, 1996,
+    1997, 1998, 1999,
+    2000, 2001, 2002,
+    2003, 2004, 2005,
+    2006, 2007, 2008,
+    2009, 2010, 2011,
+    2012, 2013, 2014,
+    2015, 2016, 2017,
+    2018, 2019, 2020,
+    2021, 2022, 2023
+];
+
+// get color palettes
+var palettes = require('users/mapbiomas/modules:Palettes.js');
+
+var mapbiomasPalette = palettes.get('classification8');
+
+var versions = {
+    bol: '5',
+    col: '1',
+    ecu: '2', 
+    guf: '1',//
+    guy: '1',//
+    per: '2',
+    sur: '1',//
+    ven: '4-2',
+};
+//
+var assetBrazil = 'projects/mapbiomas-workspace/COLECAO9/integracao';
+
+var assetRaisgC5 = 'projects/mapbiomas-raisg/public/collection5/mapbiomas_raisg_panamazonia_collection5_integration_v1';
+
+var assetOtherList = [
+  'projects/mapbiomas-raisg/MAPBIOMAS-BOLIVIA/COLECCION2/INTEGRACION/integracion-pais/BOLIVIA-'+ versions.bol,
+  'projects/mapbiomas-raisg/MAPBIOMAS-COLOMBIA/COLECCION2/INTEGRACION/integracion-amazonia/COLOMBIA-'+ versions.col,
+  // 'projects/mapbiomas-raisg/MAPBIOMAS-ECUADOR/COLECCION2/INTEGRACION/integracion-amazonia/ECUADOR-'+ versions.ecu,
+  // 'projects/mapbiomas-raisg/MAPBIOMAS-GUIANAS/COLECCION6/INTEGRACION/integracion-pais/GUYANE_FRANCAISE-'+ versions.guf,
+  'projects/mapbiomas-raisg/MAPBIOMAS-GUIANAS/COLECCION6/INTEGRACION/integracion-pais/GUYANA-'+ versions.guy,
+  'projects/mapbiomas-raisg/MAPBIOMAS-PERU/COLECCION3/INTEGRACION/integracion-pais/PERU-AMAZONIA6-'+ versions.per,
+  'projects/mapbiomas-raisg/MAPBIOMAS-GUIANAS/COLECCION6/INTEGRACION/integracion-pais/SURINAME-'+ versions.sur,
+  'projects/mapbiomas-raisg/MAPBIOMAS-VENEZUELA/LANDSAT/AMAZONIA-6/MAPA-GENERAL/integracion/VENEZUELA-'+ versions.ven,
+];
+
+var assetsRemap = [
+    // 'projects/mapbiomas-raisg/DATOS_AUXILIARES/VECTORES/AJUSTES3/BOLIVIA',
+    // 'projects/mapbiomas-raisg/DATOS_AUXILIARES/VECTORES/AJUSTES3/COLOMBIA',
+    // 'projects/mapbiomas-raisg/DATOS_AUXILIARES/VECTORES/AJUSTES3/GUYANAS',
+    // 'projects/mapbiomas-raisg/DATOS_AUXILIARES/VECTORES/AJUSTES3/ECUADOR',
+    // 'projects/mapbiomas-raisg/DATOS_AUXILIARES/VECTORES/AJUSTES3/PERU',
+    // 'projects/mapbiomas-raisg/DATOS_AUXILIARES/VECTORES/AJUSTES3/VENEZUELA',
+    // remap_3_6,
+    // remap_6_3,
+    // remap_25_29,
+    remap_33_3
+];
+
+var assetRaisg = 'projects/mapbiomas-raisg/DATOS_AUXILIARES/RASTERS/limite-raisg-5';
+var assetCountries = 'projects/mapbiomas-raisg/DATOS_AUXILIARES/VECTORES/paises-5';
+
+var integratedBrazil = ee.ImageCollection(assetBrazil)
+    .filter(ee.Filter.eq('version', '0-24'))
+    .min();
+
+var integratedOther = ee.ImageCollection(assetOtherList).mosaic();
+
+print(integratedOther);
+
+var countries = ee.FeatureCollection(assetCountries);
+
+// pan-amazon class ids
+var classIds = [
+    [1, 1], // Bosque Natural
+    [2, 2], // 
+    [3, 3], // Formacion Forestal
+    [4, 4], // Formacion Sabanica
+    [5, 5], // Manglar
+    [6, 6], // Bosque Inundable
+    [49, 3], // Restinga arborizada
+    //
+    [10, 13], // Formación Natural No Forestal
+    [50, 13], // Restinga Herbacea
+    [11, 11], // Formación Natural No Forestal Inundable
+    [12, 12], // Formación Campestre
+    [29, 29], // Afloramiento Rocoso
+    [32, 13], // Apicum
+    [13, 13], // Otra Formación Natural No Forestal	Cobertura	SI
+    //
+    [14, 21],
+    [15, 15],
+    [18, 18],
+    [39, 18],
+    [20, 18],
+    [40, 18],
+    [41, 18],
+    [36, 18],
+    [46, 18],
+    [47, 18],
+    [48, 18],
+    [62, 18],
+    [9, 9], // Silvicultura
+    [35, 35], // Palma Aceitera
+    [21, 21], // Mosaico de Agricultura y/o Pasto
+    //
+    [22, 22], // Área sin Vegetación
+    [23, 25], // Playa o Duna
+    [24, 24], // Infraestructura Urbana
+    [25, 25], // Otra Área sin Vegetación
+    [30, 30], // Minería
+    //
+    [26, 26], // Cuerpo de agua	Cobertura
+    [33, 33], // Río, Lago u Océano	Cobertura
+    [31, 33], // Acuicultura
+    [34, 34], // Glaciar	Cobertura	SI
+    [27, 27], // No Observado		SI
+    [0, 27], // No Observado		SI
+];
+
+/**
+ * Collection 3
+ */
+
+var raisgC5 = ee.Image(assetRaisgC5);
+
+raisgC5 = raisgC5.addBands(
+    raisgC5.select(['classification_2022'], ['classification_2023']));
+/**
+ * Raisg region
+ */
+var raisgRegion = ee.Image(assetRaisg).gt(0);
+
+/**
+ * Collection Pan-Amazônia
+ */
+var integrated = ee.ImageCollection.fromImages([integratedOther, integratedBrazil]).mosaic();
+
+var classIn = classIds.map(
+    function (classid) {
+        return classid[0];
+    }
+);
+
+var classOut = classIds.map(
+    function (classid) {
+        return classid[1];
+    }
+);
+
+integrated = ee.Image(integrated);
+integrated = integrated
+    .where(integrated.eq(27), 0)
+    .selfMask()
+    // .unmask(raisgC5)
+    .unmask(27)
+    .mask(raisgRegion.gt(0));
+
+
+// load remap polygons
+var remapCollection = ee.FeatureCollection(
+    assetsRemap.map(
+        function (item) {
+            return ee.FeatureCollection(item);
+        }
+    )
+).flatten();
+
+// Get remap masks
+var integratedRemaped = remapCollection.iterate(
+    function (feature, image) {
+        image = ee.Image(image);
+
+        var polygon = ee.FeatureCollection(feature);
+        var original = ee.Image().paint(polygon, 'class_original')
+            .clipToBoundsAndScale(polygon.geometry(), null, null, null, 30);
+
+        var final = ee.Image().paint(polygon, 'class_final')
+            .clipToBoundsAndScale(polygon.geometry(), null, null, null, 30);
+
+        return image.where(image.eq(original), final);
+    },
+    integrated
+);
+
+integratedRemaped = ee.Image(integratedRemaped);
+
+integratedRemaped = integratedRemaped.bandNames()
+    .iterate(
+        function (band, image) {
+
+            var remaped = integratedRemaped.select([band])
+                .remap(classIn, classOut)
+                .rename([band]);
+
+            return ee.Image(image).addBands(remaped);
+        },
+        ee.Image().select()
+    );
+
+integratedRemaped = ee.Image(integratedRemaped);
+
+var assets = {
+  mosaico:'projects/nexgenmap/MapBiomas2/LANDSAT/PANAMAZON/mosaics-2',
+  mosaico22:'projects/mapbiomas-raisg/MOSAICOS/mosaics-2'}
+  
+var mosaico = ee.ImageCollection(assets.mosaico)
+              .merge(
+                ee.ImageCollection(assets.mosaico22)  
+              )
+var visMos = {
+  bands: ['swir1_median', 'nir_median', 'red_median'],
+  gain: [0.08, 0.06, 0.2]
+}
+
+// Visualize results
+years.forEach(
+    function (year) {
+        
+        var mos = mosaico
+              .filter(ee.Filter.eq('year',year))
+        
+        Map.addLayer(mos,visMos,'Mosaico-' + year, false);
+
+        Map.addLayer(integrated, {
+            bands: ['classification_' + year],
+            min: 0,
+            max: 62,
+            palette: mapbiomasPalette,
+            format: 'png'
+        },
+            'Pan-Amazon ' + year,
+            false
+        );
+
+        Map.addLayer(integratedRemaped, {
+            bands: ['classification_' + year],
+            min: 0,
+            max: 62,
+            palette: mapbiomasPalette,
+            format: 'png'
+        },
+            'Pan-Amazônia [ajustado] ' + year,
+            false
+        );
+
+    }
+);
+
+Map.addLayer(
+    countries.style({ color: 'cyan', fillColor: 'ffffff00', width: 1 }), {},
+    'Countries',
+    false
+);
+
+
+
+Export.image.toAsset({
+    'image': integratedRemaped
+        .set('version', outputVersion)
+        .set('territory', 'raisg'),
+    'description': 'mapbiomas_raisg_panamazonia_collection6_integration' + '-' + outputVersion,
+    'assetId': outputAsset + '/' + 'mapbiomas_raisg_panamazonia_collection6_integration' + '-' + outputVersion,
+    'pyramidingPolicy': {
+        ".default": "mode"
+    },
+    'region': geometry,
+    'scale': 30,
+    'maxPixels': 1e13
+});
+
+
+
+// /**
+// * Export to asset
+// */
+// var assetGrids = "projects/mapbiomas-raisg/DATOS_AUXILIARES/VECTORES/grid-raisg";
+
+// var grids = ee.FeatureCollection(assetGrids);
+
+// var gridNames = [
+//     "NA-17", "NA-18", "NA-19", "NA-20", "NA-21", "NA-22", "NB-18", "NB-19",
+//     "NB-20", "NB-21", "NB-22", "NC-20", "NC-21", "SA-17", "SA-18", "SA-19",
+//     "SA-20", "SA-21", "SA-22", "SA-23", "SB-17", "SB-18", "SB-19", "SB-20",
+//     "SB-21", "SB-22", "SB-23", "SC-17", "SC-18", "SC-19", "SC-20", "SC-21",
+//     "SC-22", "SC-23", "SD-18", "SD-19", "SD-20", "SD-21", "SD-22", "SD-23",
+//     "SE-19", "SE-20", "SE-21", "SE-22", "SF-20",
+// ];
+
+// gridNames.forEach(
+//     function (gridName) {
+//         var grid = grids.filter(ee.Filter.stringContains('name', gridName));
+
+//         // Export.image.toAsset({
+//         //     'image': integratedRemaped
+//         //         .set('version', outputVersion)
+//         //         // .set('description', 'description')
+//         //         .set('territory', 'BRAZIL'),
+//         //     'description': gridName + '-' + outputVersion,
+//         //     'assetId': outputAsset + '/' + gridName + '-' + outputVersion,
+//         //     'pyramidingPolicy': {
+//         //         ".default": "mode"
+//         //     },
+//         //     'region': grid.geometry().buffer(300).bounds(),
+//         //     'scale': 30,
+//         //     'maxPixels': 1e13
+//         // });
+//     }
+// );

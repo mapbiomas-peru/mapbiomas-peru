@@ -1,0 +1,62 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var geometry = 
+    /* color: #d63000 */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Geometry.Polygon(
+        [[[-81.35720177237843, 0.18420205095182549],
+          [-81.35720177237843, -18.4716219737084],
+          [-68.34938927237843, -18.4716219737084],
+          [-68.34938927237843, 0.18420205095182549]]], null, false);
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+//Script para juntar varios assets en un solo raster
+
+//Define the folder path
+var folderPath = 'projects/mapbiomas-raisg/MAPBIOMAS-PERU/COLECCION3/TRANSVERSALES/WATER/MASCARA/';
+
+//define a pixel value for the final raster
+var classe = 33;
+// List the assets in the folder
+var list = ee.data.listAssets(folderPath);
+
+// Print the list to see the assets
+print(list, 'list');
+
+// Extract the asset IDs from the list
+var assetList = list.assets.map(function(asset) {
+  return asset.id;
+});
+
+// Convert the list of asset IDs to a list of images
+var imageList = assetList.map(function(assetId) {
+  return ee.Image(assetId);
+});
+
+// Convert the list of images to an multiband image
+var imageCollection = ee.ImageCollection(imageList).toBands();
+
+print(imageCollection, 'imageCollection')
+
+//reduce all bands in one
+var reduceImage = imageCollection.reduce('sum').multiply(0).add(classe).selfMask()
+
+print(reduceImage, 'reduceImage')
+//visualize
+
+Map.addLayer(reduceImage, {palette:'red'}, 'reduceImage')
+// Define the export parameters
+var exportParams = {
+  image: reduceImage,
+  description: 'ACUMULADO-TOTAL-WATER',
+  assetId: folderPath + 'ACUMULADO-TOTAL-WATER-1',
+  region: geometry, 
+  pyramidingPolicy: 'mode',
+  scale: 30, 
+  maxPixels: 1e13
+};
+
+// Export the image to an asset
+Export.image.toAsset(exportParams);

@@ -1,0 +1,60 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var geometry_21 = /* color: #d63000 */ee.Geometry.MultiPoint(),
+    geometry_12 = /* color: #d63000 */ee.Geometry.Polygon(
+        [[[-70.5798842022956, 6.067846207204013],
+          [-70.5798842022956, 6.067035383348475],
+          [-70.57911172609931, 6.067035383348475],
+          [-70.57911172609931, 6.067846207204013]]], null, false);
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+var param = {
+    'country': 'PERU',
+};
+
+var regionesclass = ee.FeatureCollection('projects/mapbiomas-raisg/MAPBIOMAS-PERU/DATOS-AUXILIARES/VECTORES/per-regiones-clasificacion-mbperu-3'); 
+var regionesMOS = ee.Image("projects/mapbiomas-raisg/MAPBIOMAS-PERU/DATOS-AUXILIARES/RASTER/per-regiones-mosaicos-mbperu-3");
+
+var years = [ 1985, 1986, 1987, 1988, 1989, 1990, 
+              1991, 1992, 1993, 1994, 1995, 1996, 
+              1997, 1998, 1999, 2000, 2001, 2002, 
+              2003, 2004, 2005, 2006, 2007, 2008, 
+              2009, 2010, 2011, 2012, 2013, 2014, 
+              2015, 2016, 2017, 2018, 2019, 2020, 
+              2021, 2022, 2023
+              ];
+
+// Get the moisac
+var mosaics_coll = ee.ImageCollection("projects/nexgenmap/MapBiomas2/LANDSAT/PANAMAZON/mosaics-2")
+                     .merge(ee.ImageCollection("projects/mapbiomas-raisg/MOSAICOS/mosaics-2"))
+                    .filter(ee.Filter.eq('country', param.country))
+                    .select(["blue_median","green_median", "red_median", "nir_median", "swir1_median", "swir2_median"])
+                    
+var regionesMOS = ee.Image("projects/mapbiomas-raisg/MAPBIOMAS-PERU/DATOS-AUXILIARES/RASTER/mb-peru-regiones-mosaico-2");
+
+var mosaics = mosaics_coll
+                        .map(
+                            function (image) {
+                                return image.updateMask(
+                                    regionesMOS.eq(ee.Number.parse(image.get('region_code')).toInt16()));
+                            }
+                        );
+
+
+years.forEach(function(year){
+  
+    var mosaic_year = mosaics.filterMetadata('year', 'equals',year).mosaic()
+
+    // Shows the mosaic on map
+    Map.addLayer(mosaic_year, 
+        {
+            bands: 'swir1_median,nir_median,red_median',
+            gain: '0.08,0.06,0.2',
+            gamma: 0.75
+        },
+        
+        'mosaic-' + year
+    , false);
+    
+})
+    
+    
+    

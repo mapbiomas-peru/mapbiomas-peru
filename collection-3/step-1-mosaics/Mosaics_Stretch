@@ -1,0 +1,124 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var roi = 
+    /* color: #ff0000 */
+    /* shown: false */
+    ee.Geometry.Polygon(
+        [[[-76.03641581037603, -3.8767200714102414],
+          [-76.03641581037603, -5.185454263504945],
+          [-74.21268534162603, -5.185454263504945],
+          [-74.21268534162603, -3.8767200714102414]]], null, false);
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+// Mapbiomas Peru
+// EYTC
+
+var year = 2023
+
+var regionesMOS = ee.Image("projects/mapbiomas-raisg/DATOS_AUXILIARES/RASTERS/clasificacion-mosaicos-4");
+var mosaics = [
+        'projects/nexgenmap/MapBiomas2/LANDSAT/PANAMAZON/mosaics-2',
+        'projects/mapbiomas-raisg/MOSAICOS/mosaics-2'
+          ];
+          
+var collection2 = ee.ImageCollection(mosaics[0]).merge(ee.ImageCollection(mosaics[1]))
+
+collection2 = collection2
+                        .map(
+                            function (image) {
+                                return image.updateMask(
+                                    regionesMOS.eq(ee.Number.parse(image.get('region_code')).toInt16()));
+                            }
+                        );
+                        
+var  image = collection2.filterMetadata('year', 'equals',year).mosaic();
+
+// Map.addLayer(mosaic.mean(), {
+//         'bands': ['swir1_median', 'nir_median', 'red_median'],
+//         'gain':[0.08,0.06,0.2],
+//         // 'min':200,
+//         // 'max':4000
+//     }, 'mosaics', true);
+    
+// Function for stretch visualization
+function visual(image, geometry, bands, scale, stretch, name, show){
+  typeof scale == 'undefined' ? scale = 100 : null;
+  typeof stretch == 'undefined' ? stretch = [2, 98] : null;
+  typeof name == 'undefined' ? name = 'Layer ' + Map.layers().length() : null;
+  typeof show == 'undefined' ? show = true : null;
+  
+  var minMax = image.select(bands).reduceRegion({
+    reducer: ee.Reducer.percentile(stretch),
+    scale: scale,
+    geometry: geometry,
+    bestEffort: true
+  });
+  
+  var scaled = ee.Image(bands.map(function(band){
+    var imageBand = image.select(band);
+    var min = ee.Number(minMax.get(band + '_p' + Math.round(stretch[0])));
+    var max = ee.Number(minMax.get(band + '_p' + Math.round(stretch[1])));
+    
+    return imageBand.unitScale(min, max).rename(band);
+  }));
+  
+  // Map.addLayer(scaled, { min: 0, max: 1, bands: bands}, name, show);
+  return scaled
+}
+
+var map1 = ui.Map();
+    map1.drawingTools().setLinked(true);
+    map1.add(ui.Label('Normal', {
+        'position': 'bottom-left',
+        'fontWeight': 'bold'
+    }));
+    
+map1.addLayer(image, {
+        'bands': ['swir1_median', 'nir_median', 'red_median'],
+        'gain':[0.08,0.06,0.2],
+        // 'min':200,
+        // 'max':4000 
+}, 'Image_Normal_Visualization');
+
+
+var map2 = ui.Map();
+    map2.drawingTools().setLinked(true);
+    map2.add(ui.Label('Stretch', {
+        'position': 'bottom-left',
+        'fontWeight': 'bold'
+    }));
+    
+map2.addLayer(visual(image, roi, ['swir1_median', 'nir_median', 'red_median'], 30, [2, 98]), 
+{ min: 0, max: 1, bands: ['swir1_median', 'nir_median', 'red_median']},  'Image_Stretch_Visualization', true);
+ 
+ 
+var maps = [map1, map2];
+var linker = ui.Map.Linker(maps);
+
+// print(map)
+// Create a title.
+var title = ui.Label('Mosaic Landsat C2 Mapbiomas Amazonia ', {
+    stretch: 'horizontal',
+    textAlign: 'center',
+    fontWeight: 'bold',
+    fontSize: '24px',
+
+});
+
+// Create a grid of maps.
+var mapGrid = ui.Panel([
+    ui.Panel([maps[0], maps[1]],
+            ui.Panel.Layout.Flow('horizontal'), {
+                stretch: 'both'
+            })
+  ],
+    ui.Panel.Layout.Flow('vertical'), {
+        stretch: 'both'
+    }
+);
+
+// Add the maps and title to the ui.root.
+ui.root.widgets().reset([title, mapGrid]);
+ui.root.setLayout(ui.Panel.Layout.Flow('vertical'));
+
+
+maps[0].centerObject(roi,11);
+

@@ -1,0 +1,9 @@
+// Definir la ruta con nombre original y el nuevo nombre
+var nombreOriginal = 'projects/mapbiomas-raisg/DATOS_AUXILIARES/RASTERS/MAPAS_REFERENCIA/Peru_Rios_Amazonia';
+var nuevoNombre = 'projects/mapbiomas-raisg/MAPBIOMAS-PERU/REFERENCE/Peru_Rios_Amazonia';
+
+// Copiar el asset a la nueva ruta
+ee.data.copyAsset(nombreOriginal, nuevoNombre);
+
+// Eliminar el asset original
+ee.data.deleteAsset(nombreOriginal);

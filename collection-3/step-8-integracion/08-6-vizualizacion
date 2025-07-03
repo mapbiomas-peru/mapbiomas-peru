@@ -1,0 +1,110 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var imageVisParam = {"opacity":1,"bands":["slope"],"gamma":1.816},
+    geometry = /* color: #d63000 */ee.Geometry.MultiPoint(
+        [[-78.6123472097672, -5.607826913843496],
+         [-78.59643772407256, -6.06956548857498],
+         [-78.519066129811, -6.106091184948736]]);
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+//Script para extraer una clase especifica por año y compararla con la colección 1 y 2
+
+var pais = 'PERU';
+var years = [2020,2021]; //visualizacion
+
+//Regiones de clasificacion
+var regionclass = 'projects/mapbiomas-raisg/MAPBIOMAS-PERU/DATOS-AUXILIARES/VECTORES/per-regiones-clasificacion-mbperu-3';
+var regionclassR = 'projects/mapbiomas-raisg/MAPBIOMAS-PERU/DATOS-AUXILIARES/RASTER/per-regiones-clasificacion-mbperu-3';
+
+var regionClassification = ee.FeatureCollection(regionclass);
+var regionsRaster = ee.Image(regionclassR);
+
+//INTREGACION COL 3 AMAZONIA
+var inputAsset = 'projects/mapbiomas-raisg/MAPBIOMAS-PERU/COLECCION3/INTEGRACION/integracion-pais/PERU-AMAZONIA6-3';
+var palettes = require('users/mapbiomas/modules:Palettes.js');
+var mapbiomasPalette = palettes.get('classification8');
+
+var col3 = ee.Image(inputAsset);
+
+var singleImage = col3;
+
+//Assets mosaicos
+
+var regionesMosaicRaster = 'projects/mapbiomas-raisg/DATOS_AUXILIARES/RASTERS/clasificacion-mosaicos-4'
+var assetMosaic = "projects/nexgenmap/MapBiomas2/LANDSAT/PANAMAZON/mosaics-2";
+var assetMosaicP2 = 'projects/mapbiomas-raisg/MOSAICOS/mosaics-2';
+var regionMosaicRaster  = ee.Image(regionesMosaicRaster).rename(['regions'])
+
+//------------Mosaico-----------
+
+var getMosaic = function(paths, regionRaster, Listyears) {
+  
+      // Mosaic
+      var Mosaic_coll = ee.ImageCollection(paths[0]).merge(ee.ImageCollection(paths[1]))
+                                                    .filter(ee.Filter.inList('year',Listyears))
+                        .filterMetadata('country', 'equals', pais)
+                        // .select(['swir1_median', 'nir_median', 'red_median'])
+                        .map(
+                            function (image) {
+                                return image.updateMask(
+                                    regionRaster.eq(ee.Number.parse(image.get('region_code')).toInt16()));
+                            }
+                        );
+                        
+                          
+
+      // Aditional Bands
+      var joinedMosaics = Mosaic_coll;
+                  
+      
+      // Select variables 
+      return joinedMosaics;
+      
+  };
+  
+
+var mosaicsRAISG = getMosaic([assetMosaic,assetMosaicP2], regionMosaicRaster, years);
+
+// Vizualización --------------------------------------
+
+for (var yearI=0;yearI<years.length;yearI++) {
+  var vis = {
+      'bands': 'classification_'+years[yearI],
+          'min': 0,
+          'max': 62,
+          'palette': mapbiomasPalette,
+  };
+  
+  var mosaicYear = mosaicsRAISG
+                    .filterMetadata('year', 'equals', years[yearI])
+                    .mosaic();
+  
+  Map.addLayer(mosaicYear,{
+          "bands":["swir1_median","nir_median","red_median"],
+          // "min":407,"max":3381,
+          'gain': [0.08, 0.06, 0.08],
+          'gamma': 0.65
+  }, 'Mosaic' + years[yearI],false);
+  
+  
+  // Seleccionar el año específico
+  var bandName = 'classification_' + years[yearI];
+  var imageOfYear = singleImage.select(bandName);
+  
+  Map.addLayer(imageOfYear, vis, 'col3-'+years[yearI], false);
+}
+
+// Exrpotación de estadísticas -------------------
+var BN = col3.bandNames()
+
+var patchAreaCalc = require('users/raisgmb01/projects-mapbiomas:mapbiomas-peru/collection-5/modules/CalcularAreaRaster.js');
+patchAreaCalc.Clasif_Area_Calc(col3, BN.getInfo(), 30, regionsRaster, 'Area_IntegracionCol3_pe', 'Area-IntegracionC3'); // Cambiado de integracion_v1 a integracion_list_remap
+
+
+var dirs = require('users/mapbiomasperu/mapbiomas-lulc:collection-3/modules/CollectionDirectories.js');
+var paths = dirs.listpaths('PERU');
+
+var assetregionVectors= paths.regionVector
+var RegionVector = ee.FeatureCollection(assetregionVectors)
+
+Map.addLayer(RegionVector.style({fillColor: '#4d4e4f22',color:'black', width: 1}), {}, 'RegionVector', false)
+
+//

@@ -1,0 +1,665 @@
+var new__data = ee.Image('projects/mapbiomas-raisg/MAPBIOMAS-PERU/COLECCION2/INTEGRACION/mapbiomas_peru_collection2_integration_v1')
+
+var white_background = ee.Image(0)
+//Map.addLayer(white_background, {"opacity":1,"bands":["constant"],"palette":["ffffff"]}, 'white_background', true)
+
+// the analysis runs only for the groups below
+var classIds = [
+    [3],[4],[6]
+];
+
+var periods = [
+    [1985, 2022]
+];
+
+var reclass = [
+  [3, 4, 5, 6,49,11,12,13,32,29,9,15,18,19,39,20,21,36,39,40,41,62,46,47,48,22,23,24,25,30,26,31,33,34],
+  [3, 4, 5, 6,49,11,12,13,32,29,9,15,18,19,39,20,21,36,39,40,41,62,46,47,48,22,23,24,25,30,26,31,33, 34]
+  ]
+
+//Palette
+var Palettes = require('users/mapbiomas/modules:Palettes.js');
+var palette = Palettes.get('classification8');
+var vis = {
+          'min': 0,
+          'max': 62,
+          'palette': palette,
+          'format': 'png'
+      };
+
+
+var years = ['1985','1986','1987','1988','1989',
+             '1990','1991','1992','1993','1994',
+             '1995','1996','1997','1998','1999',
+             '2000','2001','2002','2003','2004',
+             '2005','2006','2007','2008','2009',
+             '2010','2011','2012','2013','2014',
+             '2015','2016','2017','2018','2019',
+             '2020','2021', '2022'];
+
+for (var i_year=0;i_year<years.length; i_year++){
+  var year = years[i_year];
+
+        var image = new__data.select('classification_'+year).remap(reclass[0],reclass[0])
+
+  if (i_year === 0){ var new__data_reclass = image.rename('classification_'+year) }  
+  else {new__data_reclass = new__data_reclass.addBands(image.rename('classification_'+year)); }
+
+}
+
+print(new__data_reclass)
+
+Map.addLayer(new__data_reclass.select('classification_'+year), vis, 'new__data_reclass '+year, true);
+
+var pixelArea = ee.Image.pixelArea().divide(1000000);
+
+
+/**
+ * import modules 
+ */
+var Legend = require('users/joaovsiqueira1/packages:Legend.js');
+var Palettes = require('users/mapbiomas/modules:Palettes.js');
+var ColorRamp = require('users/joaovsiqueira1/packages:ColorRamp.js');
+/**
+ * define parameters 
+ */
+
+
+var mpbPalette = Palettes.get('classification6');
+
+// defined user functions
+/**
+ * 
+ * @param {*} image 
+ * @returns 
+ */
+var calculateNumberOfClasses = function (image) {
+
+    var nClasses = image.reduce(ee.Reducer.countDistinctNonNull());
+
+    return nClasses.rename('number_of_classes');
+};
+
+/**
+ * 
+ * @param {*} image 
+ * @returns 
+ */
+var calculateNumberOfChanges = function (image) {
+
+    var nChanges = image.reduce(ee.Reducer.countRuns()).subtract(1);
+
+    return nChanges.rename('number_of_changes');
+};
+
+/**
+ * visualization
+ */
+var visParams = {
+    'number_of_changes': {
+        'min': 0,
+        'max': 7,
+        'palette': [
+            "#C8C8C8",
+            "#FED266",
+            "#FBA713",
+            "#cb701b",
+            "#a95512",
+            "#662000",
+            "#cb181d"
+        ],
+        'format': 'png'
+    },
+    'number_of_classes': {
+        'min': 1,
+        'max': 5,
+        'palette': [
+            "#C8C8C8",
+            "#AE78B2",
+            "#772D8F",
+            "#4C226A",
+            "#22053A"
+        ],
+        'format': 'png'
+    },
+    'stable': {
+        'min': 0,
+        'max': 49,
+        'palette': Palettes.get('classification6'),
+        'format': 'png'
+    },
+    'trajectories': {
+        'min': 1,
+        'max': 8,
+        'palette': [
+            "#c4c3c0", //[1] Ab-Ab Ch=0
+            "#666666", //[2] Pr-Pr Ch=0
+            "#020e7a", //[3] Ab-Pr Ch=1
+            "#941004", //[4] Pr-Ab Ch=1
+            "#14a5e3", //[5] Ab-Pr Ch>2
+            "#f5261b", //[6] Pr-Ab Ch>2
+            "#9c931f", //[7] Ab-Ab Ch>1
+            "#ffff00", //[8] Pr-Pr Ch>1
+
+            // "#c8c8c8", //[1] Ab-Ab Ch=0
+            // "#999999", //[2] Pr-Pr Ch=0
+            // "#00598d", //[3] Ab-Pr Ch=1
+            // "#9d006d", //[4] Pr-Ab Ch=1
+            // "#02d6f2", //[5] Ab-Pr Ch>2
+            // "#ff4dd5", //[6] Pr-Ab Ch>2
+            // "#f58700", //[7] Ab-Ab Ch>1
+            // "#ffbf70", //[8] Pr-Pr Ch>1
+        ],
+        'format': 'png'
+    }
+};
+
+/**
+ * 
+ */
+// all lulc images
+var image = new__data_reclass;
+
+// for each period in list
+periods.forEach(
+    function (period) {
+        var count = period[1] - period[0] + 1;
+
+        var bands = Array.apply(null, Array(count)).map(
+            function (_, i) {
+                return 'classification_' + (period[0] + i).toString();
+            }
+        );
+
+        // lulc images 
+        var imagePeriod = image.select(bands);
+
+        // number of classes
+        var nClasses = calculateNumberOfClasses(imagePeriod);
+
+        // incidents
+        var nChanges = calculateNumberOfChanges(imagePeriod);
+
+        // stable
+        var stable = imagePeriod.select(0).mask(nClasses.eq(1));
+
+        Map.addLayer(nClasses, visParams.number_of_classes, period + ' number of classes ', false);
+        Map.addLayer(nChanges, visParams.number_of_changes, period + ' number of changes ', false);
+        Map.addLayer(stable, visParams.stable, period + ' stable ', false);
+
+        // trajectories
+        classIds.forEach(
+            function (classList) {
+                var classIdsMask = ee.List(bands).iterate(
+                    function (band, allMasks) {
+                        var mask = imagePeriod.select([band])
+                            .remap(classList, ee.List.repeat(1, classList.length), 0);
+
+                        return ee.Image(allMasks).addBands(mask);
+                    },
+                    ee.Image().select()
+                );
+
+                classIdsMask = ee.Image(classIdsMask).rename(bands);
+
+                // nChanges in classList
+                var nChanges = calculateNumberOfChanges(classIdsMask);
+
+                // nChanges rules in the analisys
+                var nChangesEq0 = nChanges.eq(0); //  no change
+                var nChangesEq1 = nChanges.eq(1); //  1 change
+                var nChangesGt1 = nChanges.gt(1); // >1 changes
+                // var nChangesGt2 = nChanges.gt(2); // >2 changes
+
+                // lulc classIds masks for the first year and last year 
+                var t1 = classIdsMask.select(bands[0]);
+                var tn = classIdsMask.select(bands[bands.length - 1]);
+
+                // categories
+                var abAbCh0 = t1.eq(0).and(nChangesEq0);
+                var prPrCh0 = t1.eq(1).and(nChangesEq0);
+                var abPrCh1 = t1.eq(0).and(nChangesEq1).and(tn.eq(1));
+                var prAbCh1 = t1.eq(1).and(nChangesEq1).and(tn.eq(0));
+                var abPrCh2 = t1.eq(0).and(nChangesGt1).and(tn.eq(1));
+                var prAbCh2 = t1.eq(1).and(nChangesGt1).and(tn.eq(0));
+                var abAbCh1 = t1.eq(0).and(nChangesGt1).and(tn.eq(0));
+                var prPrCh1 = t1.eq(1).and(nChangesGt1).and(tn.eq(1));
+
+                // (*) the classes Ab-Ab and Pr-Pr the classes were joined
+                var trajectories = ee.Image(0)
+                    .where(abAbCh0, 1)  //[1] Ab-Ab Ch=0
+                    .where(prPrCh0, 2)  //[2] Pr-Pr Ch=0
+                    .where(abPrCh1, 3)  //[3] Ab-Pr Ch=1
+                    .where(prAbCh1, 4)  //[4] Pr-Ab Ch=1
+                    .where(abPrCh2, 5)  //[5] Ab-Pr Ch>2
+                    .where(prAbCh2, 6)  //[6] Pr-Ab Ch>2
+                    .where(abAbCh1, 7)  //[7] Ab-Ab Ch>1 (*)
+                    .where(prPrCh1, 7); //[8] Pr-Pr Ch>1 (*)
+
+                trajectories = trajectories.rename('trajectories').selfMask();
+
+                Map.addLayer(trajectories, visParams.trajectories, period + ' trajectories ' + classList, false);
+
+            }
+        );
+    }
+);
+
+var incidentsLegend = Legend.getLegend(
+    {
+        "title": "Number of changes",
+        "layers": [
+            ["#C8C8C8", 0, " no Change"],
+            ["#FED266", 1, " 1 Change"],
+            ["#FBA713", 2, " 2 Changes"],
+            ["#cb701b", 3, " 3 Changes"],
+            ["#a95512", 4, " 4 Changes"],
+            ["#662000", 5, " 5 Changes"],
+            ["#cb181d", 6, ">6 Changes"],
+        ],
+        "style": {
+            "backgroundColor": "#ffffff",
+            "color": "#212121",
+            "fontSize": '12px',
+            "iconSize": '14px',
+        },
+        "orientation": "vertical"
+    }
+);
+
+var statesLegend = Legend.getLegend(
+    {
+        "title": "Number of classes",
+        "layers": [
+            ["#C8C8C8", 1, " 1 Classe"],
+            ["#AE78B2", 2, " 2 Classes"],
+            ["#772D8F", 3, " 3 Classes"],
+            ["#4C226A", 4, " 4 Classes"],
+            ["#22053A", 5, ">5 Classes"],
+        ],
+        "style": {
+            "backgroundColor": "#ffffff",
+            "color": "#212121",
+            "fontSize": '12px',
+            "iconSize": '14px',
+        },
+        "orientation": "vertical"
+    }
+);
+
+var trajectoriesLegend = Legend.getLegend(
+    {
+        "title": "Trajectories",
+        "layers": [
+            ["#c4c3c0", 1, "Ab-Ab Ch=0"],
+            ["#666666", 2, "Pr-Pr Ch=0"],
+            ["#020e7a", 3, "Ab-Pr Ch=1"],
+            ["#941004", 4, "Pr-Ab Ch=1"],
+            ["#14a5e3", 5, "Ab-Pr Ch>2"],
+            ["#f5261b", 6, "Pr-Ab Ch>2"],
+            ["#9c931f", 7, "Ab-Ab or Pr-Pr Ch>1"],
+            // ["#ffff00", 8, "Pr-Pr Ch>1"],
+            // ["#c8c8c8", 1, "Ab-Ab Ch=0"],
+            // ["#999999", 2, "Pr-Pr Ch=0"],
+            // ["#00598d", 3, "Ab-Pr Ch=1"],
+            // ["#9d006d", 4, "Pr-Ab Ch=1"],
+            // ["#02d6f2", 5, "Ab-Pr Ch>2"],
+            // ["#ff4dd5", 6, "Pr-Ab Ch>2"],
+            // ["#f58700", 7, "Ab-Ab Ch>1"],
+            // ["#ffbf70", 8, "Pr-Pr Ch>1"],
+        ],
+        "style": {
+            "backgroundColor": "#ffffff",
+            "color": "#212121",
+            "fontSize": '12px',
+            "iconSize": '14px',
+        },
+        "orientation": "vertical"
+    }
+);
+
+var panel = ui.Panel({
+    widgets: [
+        incidentsLegend,
+        statesLegend,
+        trajectoriesLegend
+    ],
+    style: {
+        position: 'bottom-left'
+    }
+});
+
+Map.add(panel);
+
+
+var mapbiomasPalette = require('users/mapbiomas/modules:Palettes.js').get('classification8');
+
+/**
+ * 
+ */
+var Chart = {
+
+    options: {
+        'title': 'Inspector',
+        'legend': 'none',
+        'chartArea': {
+            left: 30,
+            right: 2,
+        },
+        'titleTextStyle': {
+            color: '#ffffff',
+            fontSize: 10,
+            bold: true,
+            italic: false
+        },
+        'tooltip': {
+            textStyle: {
+                fontSize: 10,
+            },
+            // isHtml: true
+        },
+        'backgroundColor': '#21242E',
+        'pointSize': 6,
+        'crosshair': {
+            trigger: 'both',
+            orientation: 'vertical',
+            focused: {
+                color: '#dddddd'
+            }
+        },
+        'hAxis': {
+            // title: 'Date', //muda isso aqui
+            slantedTextAngle: 90,
+            slantedText: true,
+            textStyle: {
+                color: '#ffffff',
+                fontSize: 8,
+                fontName: 'Arial',
+                bold: false,
+                italic: false
+            },
+            titleTextStyle: {
+                color: '#ffffff',
+                fontSize: 10,
+                fontName: 'Arial',
+                bold: true,
+                italic: false
+            },
+            viewWindow: {
+                max: 38,
+                min: 0
+            },
+            gridlines: {
+                color: '#21242E',
+                interval: 1
+            },
+            minorGridlines: {
+                color: '#21242E'
+            }
+        },
+        'vAxis': {
+            title: 'Class', // muda isso aqui
+            textStyle: {
+                color: '#ffffff',
+                fontSize: 10,
+                bold: false,
+                italic: false
+            },
+            titleTextStyle: {
+                color: '#ffffff',
+                fontSize: 10,
+                bold: false,
+                italic: false
+            },
+            viewWindow: {
+                max: 50,
+                min: 0
+            },
+            gridlines: {
+                color: '#21242E',
+                interval: 2
+            },
+            minorGridlines: {
+                color: '#21242E'
+            }
+        },
+        'lineWidth': 0,
+        // 'width': '300px',
+        'height': '150px',
+        'margin': '0px 0px 0px 0px',
+        'series': {
+            0: { color: '#21242E' }
+        },
+
+    },
+
+    assets: {
+        image: null,
+        imagef: null
+    },
+
+    data: {
+        image: null,
+        imagef: null,
+        point: null
+    },
+
+    legend: {
+      1: { 'color': mapbiomasPalette[1], 'name': 'C01-Formación boscosa' },
+      3: { 'color': mapbiomasPalette[3], 'name': 'C03-Bosque' },
+      4: { 'color': mapbiomasPalette[4], 'name': 'C04-Bosque seco' },
+      5: { 'color': mapbiomasPalette[5], 'name': 'C05-Manglar' },
+      6: { 'color': mapbiomasPalette[6], 'name': 'C06-Bosque inundable' },
+      10: { 'color': mapbiomasPalette[10], 'name': 'C10-Formación natural no boscosa' },
+      11: { 'color': mapbiomasPalette[11], 'name': 'C11-Zona pantanosa o pastizal inundable' },
+      12: { 'color': mapbiomasPalette[12], 'name': 'C12-Pastizal / herbazal' },
+      13: { 'color': mapbiomasPalette[13], 'name': 'C13-Matorral y otras formaciones no boscosas' },
+      14: { 'color': mapbiomasPalette[14], 'name': 'C14-Área agropecuaria' },
+      15: { 'color': mapbiomasPalette[15], 'name': 'C15-Pasto' },
+      18: { 'color': mapbiomasPalette[18], 'name': 'C18-Agricultura' },
+      9: { 'color': mapbiomasPalette[9], 'name': 'C09-Plantación forestal' },
+      35: { 'color': mapbiomasPalette[35], 'name': 'C35-Palma aceitera' },
+      21: { 'color': mapbiomasPalette[21], 'name': 'C21-Mosaico agropecuario' },
+      22: { 'color': mapbiomasPalette[22], 'name': 'C22-Área sin vegetación' },
+      24: { 'color': mapbiomasPalette[24], 'name': 'C24-Infraestructura' },
+      30: { 'color': mapbiomasPalette[30], 'name': 'C30-Minería' },
+      25: { 'color': mapbiomasPalette[25], 'name': 'C25-Otra área sin vegetación' },
+      26: { 'color': mapbiomasPalette[26], 'name': 'C26-Cuerpo de agua' },
+      33: { 'color': mapbiomasPalette[33], 'name': 'C33-Río, lago u océano' },
+      31: { 'color': mapbiomasPalette[31], 'name': 'C31-Acuicultura' },
+      34: { 'color': mapbiomasPalette[34], 'name': 'C34-Glaciar' },
+      32: { 'color': mapbiomasPalette[32], 'name': 'C32-Salina' }
+
+    },
+
+    loadData: function () {
+        Chart.data.image = image;
+//        Chart.data.imagef = count_nat;
+    },
+
+    init: function () {
+        Chart.loadData();
+        Chart.ui.init();
+    },
+
+    getSamplePoint: function (image, points) {
+
+        var sample = image.sampleRegions({
+            'collection': points,
+            'scale': 30,
+            'geometries': true
+        });
+
+        return sample;
+    },
+
+    ui: {
+
+        init: function () {
+
+            Chart.ui.form.init();
+            Chart.ui.activateMapOnClick();
+
+        },
+
+        activateMapOnClick: function () {
+
+            Map.onClick(
+                function (coords) {
+                    var point = ee.Geometry.Point(coords.lon, coords.lat);
+
+                    var bandNames = Chart.data.image.bandNames();
+
+                    var newBandNames = bandNames.map(
+                        function (bandName) {
+                            var name = ee.String(ee.List(ee.String(bandName).split('_')).get(1));
+
+                            return name;
+                        }
+                    );
+
+                    var image = Chart.data.image.select(bandNames, newBandNames);
+//                    var imagef = Chart.data.imagef.select(bandNames, newBandNames);
+
+//                    Chart.ui.inspect(Chart.ui.form.chartInspectorf, imagef, point, 1.0);
+                    Chart.ui.inspect(Chart.ui.form.chartInspector, image, point, 1.0);
+                }
+            );
+
+            Map.style().set('cursor', 'crosshair');
+        },
+
+        refreshGraph: function (chart, sample, opacity) {
+
+            sample.evaluate(
+                function (featureCollection) {
+
+                    if (featureCollection !== null) {
+                        // print(featureCollection.features);
+
+                        var pixels = featureCollection.features.map(
+                            function (features) {
+                                return features.properties;
+                            }
+                        );
+
+                        var bands = Object.getOwnPropertyNames(pixels[0]);
+
+                        // Add class value
+                        var dataTable = bands.map(
+                            function (band) {
+                                var value = pixels.map(
+                                    function (pixel) {
+                                        return pixel[band];
+                                    }
+                                );
+
+                                return [band].concat(value);
+                            }
+                        );
+
+                        // Add point style and tooltip
+                        dataTable = dataTable.map(
+                            function (point) {
+                                var color = Chart.legend[point[1]].color;
+                                var name = Chart.legend[point[1]].name;
+                                var value = String(point[1]);
+
+                                var style = 'point {size: 4; fill-color: ' + color + '; opacity: ' + opacity + '}';
+                                var tooltip = 'year: ' + point[0] + ', class: [' + value + '] ' + name;
+
+                                return point.concat(style).concat(tooltip);
+                            }
+                        );
+
+                        var headers = [
+                            'serie',
+                            'id',
+                            { 'type': 'string', 'role': 'style' },
+                            { 'type': 'string', 'role': 'tooltip' }
+                        ];
+
+                        dataTable = [headers].concat(dataTable);
+
+                        chart.setDataTable(dataTable);
+
+                    }
+                }
+            );
+        },
+
+        refreshMap: function () {
+
+            var pointLayer = Map.layers().filter(
+                function (layer) {
+                    return layer.get('name') === 'Point';
+                }
+            );
+
+            if (pointLayer.length > 0) {
+                Map.remove(pointLayer[0]);
+                Map.addLayer(Chart.data.point, { color: 'red' }, 'Point');
+            } else {
+                Map.addLayer(Chart.data.point, { color: 'red' }, 'Point');
+            }
+
+        },
+
+        inspect: function (chart, image, point, opacity) {
+
+            // aqui pode fazer outras coisas além de atualizar o gráfico
+            Chart.data.point = Chart.getSamplePoint(image, ee.FeatureCollection(point));
+
+            Chart.ui.refreshMap(Chart.data.point);
+            Chart.ui.refreshGraph(chart, Chart.data.point, opacity);
+
+        },
+
+        form: {
+
+            init: function () {
+
+                Chart.ui.form.panelChart.add(Chart.ui.form.chartInspector);
+//                Chart.ui.form.panelChart.add(Chart.ui.form.chartInspectorf);
+
+                Chart.options.title = 'Integrated';
+                Chart.ui.form.chartInspector.setOptions(Chart.options);
+
+//                Chart.options.title = 'Integrated - ft';
+//                Chart.ui.form.chartInspectorf.setOptions(Chart.options);
+
+                // Chart.ui.form.chartInspector.onClick(
+                //     function (xValue, yValue, seriesName) {
+                //         print(xValue, yValue, seriesName);
+                //     }
+                // );
+
+                Map.add(Chart.ui.form.panelChart);
+            },
+
+            panelChart: ui.Panel({
+                'layout': ui.Panel.Layout.flow('vertical'),
+                'style': {
+                    'width': '450px',
+                    // 'height': '200px',
+                    'position': 'bottom-right',
+                    'margin': '0px 0px 0px 0px',
+                    'padding': '0px',
+                    'backgroundColor': '#21242E'
+                },
+            }),
+
+            chartInspector: ui.Chart([
+                ['Serie', ''],
+                ['', -1000], // número menor que o mínimo para não aparecer no gráfico na inicialização
+            ]),
+
+//            chartInspectorf: ui.Chart([
+//                ['Serie', ''],
+//                ['', -1000], // número menor que o mínimo para não aparecer no gráfico na inicialização
+//            ])
+        }
+    }
+};
+
+Chart.init();
