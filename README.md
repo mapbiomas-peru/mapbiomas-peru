@@ -1,47 +1,73 @@
-# Mapbiomas Perú on github
+# 🇵🇪 MapBiomas Peru – Official GitHub Repositories
 
-> Here is available all the scripts used for processing collection 2 of mapbiomas Perú.
+## 🌎 Welcome to MapBiomas Peru GitHub 🇵🇪
 
-## Summary of mapbiomas code repositories (Under construction)
+Welcome to the official GitHub organization of MapBiomas Peru 🇵🇪.
 
-### LAND USE LAND COVER (LULC)
-* [COLECCION1](https://github.com/mapbiomas-peru/lulc/tree/collection-1)      <!-- https://github.com/mapbiomas-brazil/amazon  -->
-* [COLECCION2](https://github.com/mapbiomas-peru/lulc/tree/collection-2)
-* [COLECCION3](https://github.com/vllactayo/mapbiomas-peru/tree/collection-3)
+This page provides access to all scripts used in the generation of thematic collections 🗂️, cross-cutting themes 🔎, mosaics 🛰️, validation workflows 📊, and analytical modules 🧩.
 
-### Cross Cuting themes
+---
+
+## 🌱 LAND USE AND LAND COVER (LULC)
+
+### 📦 Collections
+- [Collection 1](https://github.com/mapbiomas-peru/lulc/tree/collection-1)
+- [Collection 2](https://github.com/mapbiomas-peru/lulc/tree/collection-2)
+- [Collection 3](https://github.com/vllactayo/mapbiomas-peru/tree/collection-3)
+
+### 🔎 Cross-Cutting Themes
 * [Urban Infrastructure](https://github.com/mapbiomas-peru/urban)
-* [Glacier](https://github.com/mapbiomas-peru/glacier)
 * [Mining](https://mapbiomas-peru.github.io/note-mb-pe-web/)
 * [Pasture](https://mapbiomas-peru.github.io/note-mb-pe-web/)
 * [Agriculture](https://mapbiomas-peru.github.io/note-mb-pe-web/)
 * [Flooded covers and Wetlands](https://mapbiomas-peru.github.io/note-mb-pe-web/)
-* [Water](https://mapbiomas-peru.github.io/note-mb-pe-web/)
+* [Beach](https://mapbiomas-peru.github.io/note-mb-pe-web/)
+* [Planted Forest](https://mapbiomas-peru.github.io/note-mb-pe-web/)
 
-### Analysis
+### 🛰 Mosaics
+- [Mosaic Creator](https://github.com/mapbiomas-peru/mosaics)
 
-* [Accuraccy](https://mapbiomas-peru.github.io/note-mb-pe-web/)  <!---POR DEFINIR -->
+### 📊 Accuracy Assessment
+- (Under construction)
 
-### Mosaics
-* [Mosaic Creator](https://github.com/mapbiomas-peru/mosaics)
+---
 
-### Toolkits
-* [Mapbiomas user toolkit](https://github.com/mapbiomas-brazil/user-toolkit)
-* [Mapbiomas integration toolkit](https://mapbiomas-peru.github.io/note-mb-pe-web/)
+## 💧 WATER
 
-### Cloud migration
-* [Guidelines for cloud migration](https://github.com/vllactayo/mb-cloud-migration)
-<!--
-**raisgmb/raisgmb** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
+### 📦 Collections
+- Collection 1
+- Collection 2
+- Collection 3
 
-Here are some ideas to get you started:
+---
 
-- 🔭 I’m currently working on ...
-- 🌱 I’m currently learning ...
-- 👯 I’m looking to collaborate on ...
-- 🤔 I’m looking for help with ...
-- 💬 Ask me about ...
-- 📫 How to reach me: ...
-- 😄 Pronouns: ...
-- ⚡ Fun fact: ...
--->
+## 🔥 FIRE
+
+- Collection 1
+
+---
+
+## 🚨 ALERTS
+
+- Collection 1
+
+---
+
+## 🧩 MODULES
+
+- Deforestation and Secondary Vegetation
+
+---
+
+## 🛠 TOOLKITS
+- [MapBiomas User Toolkit](https://github.com/mapbiomas-brazil/user-toolkit)
+- Integration Toolkit (under development)
+
+---
+
+## ☁️ Cloud Migration
+- [Guidelines for Cloud Migration](https://github.com/vllactayo/mb-cloud-migration)
+
+---
+
+📌 *This repository structure is under continuous improvement.*
