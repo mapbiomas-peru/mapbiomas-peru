@@ -6,8 +6,6 @@ Welcome to the official GitHub organization of MapBiomas Peru 🇵🇪.
 
 This page provides access to all scripts used in the generation of thematic collections 🗂️, cross-cutting themes 🔎, mosaics 🛰️, validation workflows 📊, and analytical modules 🧩.
 
-All repositories follow the principles of reproducibility 🔁 and transparency 🔍 adopted by the MapBiomas Network 🌱.
-
 ---
 
 ## 🌱 LAND USE AND LAND COVER (LULC)
@@ -18,11 +16,13 @@ All repositories follow the principles of reproducibility 🔁 and transparency 
 - [Collection 3](https://github.com/vllactayo/mapbiomas-peru/tree/collection-3)
 
 ### 🔎 Cross-Cutting Themes
-- Urban Infrastructure
-- Mining
-- Agriculture
-- Pasture
-- Flooded Covers & Wetlands
+* [Urban Infrastructure](https://github.com/mapbiomas-peru/urban)
+* [Mining](https://mapbiomas-peru.github.io/note-mb-pe-web/)
+* [Pasture](https://mapbiomas-peru.github.io/note-mb-pe-web/)
+* [Agriculture](https://mapbiomas-peru.github.io/note-mb-pe-web/)
+* [Flooded covers and Wetlands](https://mapbiomas-peru.github.io/note-mb-pe-web/)
+* [Beach](https://mapbiomas-peru.github.io/note-mb-pe-web/)
+* [Planted Forest](https://mapbiomas-peru.github.io/note-mb-pe-web/)
 
 ### 🛰 Mosaics
 - [Mosaic Creator](https://github.com/mapbiomas-peru/mosaics)
