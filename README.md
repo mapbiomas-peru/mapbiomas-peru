@@ -28,7 +28,7 @@ This page provides access to all scripts used in the generation of thematic coll
 - [Mosaic Creator](https://github.com/mapbiomas-peru/mosaics)
 
 ### 📊 Accuracy Assessment
-- (Under construction)
+- [Methodology](https://mapbiomas-peru.github.io/note-mb-pe-web/)
 
 ---
 
