@@ -18,54 +18,39 @@ This page provides access to all scripts used in the generation of thematic coll
 ### 🔎 Cross-Cutting Themes
 * [Urban Infrastructure](https://github.com/mapbiomas-peru/urban)
 * [Mining](https://mapbiomas-peru.github.io/note-mb-pe-web/)
-* [Flooded covers and Wetlands](https://mapbiomas-peru.github.io/note-mb-pe-web/)
-* [Beach](https://mapbiomas-peru.github.io/note-mb-pe-web/)
-* [Planted Forest](https://mapbiomas-peru.github.io/note-mb-pe-web/)
-* [Fog Oasis](https://mapbiomas-peru.github.io/note-mb-pe-web/)
-
-### 🛰 Mosaics
-- [Mosaic Creator](https://github.com/mapbiomas-peru/mosaics)
-
-### 📊 Accuracy Assessment
-- [Methodology](https://mapbiomas-peru.github.io/note-mb-pe-web/)
 
 ---
 
 ## 💧 WATER
 
 ### 📦 Collections
-- Collection 1
-- Collection 2
-- Collection 3
+- Collection 1 _(under construction)_ 
+- Collection 2 _(under construction)_
+- Collection 3 _(under construction)_
 
 ---
 
 ## 🔥 FIRE
 
-- Collection 1
+- Collection 1 _(under construction)_
 
 ---
 
 ## 🚨 ALERTS
 
-- Collection 1
+- Collection 1 _(under construction)_
 
 ---
 
 ## 🧩 MODULES
 
-- Deforestation and Secondary Vegetation
+- Deforestation and Secondary Vegetation _(under construction)_
 
 ---
 
 ## 🛠 TOOLKITS
 - [MapBiomas User Toolkit](https://github.com/mapbiomas-brazil/user-toolkit)
 - Integration Toolkit (under development)
-
----
-
-## ☁️ Cloud Migration
-- [Guidelines for Cloud Migration](https://github.com/vllactayo/mb-cloud-migration)
 
 ---
 
