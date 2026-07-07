@@ -26,7 +26,7 @@ This page provides access to all scripts used in the generation of thematic coll
 ### 📦 Collections
 - Collection 1 _(under construction)_ 
 - Collection 2 _(under construction)_
-- Collection 3 _(under construction)_
+- [Collection 3](https://github.com/Jromualdop98/mapbiomas-water/tree/main/collection-3)
 
 ---
 
